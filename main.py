@@ -2,8 +2,11 @@
 # 1 день -- сделал расстановку тайлов 1 типа
 
 from settings import *
+import random
 
 import tile
+
+from drawer import *
 
 if __name__ != '__main__': quit()
 
@@ -15,14 +18,17 @@ while 1:
 
     mouse_pressed = pg.mouse.get_pressed(3)
     if mouse_pressed[0] and can_press_mouse:
+        tile.Tile.selected_tile = random.choice(tile.Tile.tiles_pile)
+
         can_press_mouse = False
         tile.Tile.place_tile(
             location=(pg.mouse.get_pos()[0] // GRID_SCALE * GRID_SCALE,
                       pg.mouse.get_pos()[1] // GRID_SCALE * GRID_SCALE),
             rotation=0)
 
-        for t in tile.Tile.tiles_pile[-1].locations:
-            SCREEN.blit(tile.Tile.tiles_pile[-1].sprite, t['location'])
+        draw_board()
+
+        draw_debug_info()
 
     elif not mouse_pressed[0]: can_press_mouse = True
 
