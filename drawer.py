@@ -1,9 +1,9 @@
 import math
 
 import pygame as pg
-import tile
+import game_board
 
-from tile import *
+from game_board import *
 from settings import *
 
 def draw_board():

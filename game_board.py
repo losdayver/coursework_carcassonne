@@ -1,5 +1,6 @@
 from settings import *
 
+# Данный класс описывает тип тайла, а не отдельные сущности тайлов
 class Tile:
     tiles_pile = [] # Список всех возможных видов тайлов
     selected_tile = None # Выбранный в данный момент тайл, который будет участвовать в следующем хрде
@@ -29,6 +30,14 @@ class Tile:
 
         Tile.selected_tile.quantity -= 1
         Tile.selected_tile.placements.append({'location' : location, 'rotation' : rotation})
+
+
+
+
+
+
+
+# Здесь описаны все возможные виды тайлов в оригинальной игре
 
 Tile.selected_tile = Tile(quantity=4,
     connections=[],

@@ -7,7 +7,7 @@ if __name__ != '__main__': quit()
 from settings import *
 import random
 
-import tile
+import game_board
 
 from drawer import *
 
