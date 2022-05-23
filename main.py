@@ -12,13 +12,13 @@ import game_board
 from drawer import *
 
 counter = 0
-for y in [2*i for i in range(5)]:
-    for x in [2*i for i in range(5)]:
-        game_board.Tile.place_tile(
-            location=(x, y),
-            rotation=0)
-        game_board.Tile.selected_tile = game_board.Tile.tiles_pile[counter]
-        counter+=1
+# for y in [2*i for i in range(5)]:
+#     for x in [2*i for i in range(5)]:
+#         game_board.Tile.place_tile(
+#             location=(x, y),
+#             rotation=0)
+#         game_board.Tile.selected_tile = game_board.Tile.tiles_pile[counter]
+#         counter+=1
 
 mouse_lock = False
 mouse_lock_location = [0,0]
@@ -57,7 +57,7 @@ while 1:
         game_board.Tile.place_tile(
             location=((pg.mouse.get_pos()[0] + VIEW_PORT_CENTRE[0]) // GRID_SCALE,
                       (pg.mouse.get_pos()[1] + VIEW_PORT_CENTRE[1]) // GRID_SCALE),
-            rotation=random.randint(0,4))
+            rotation=0)
 
         game_board.Tile.selected_tile = random.choice(game_board.Tile.tiles_pile)
 
@@ -65,8 +65,12 @@ while 1:
 
     SCREEN.fill([0,0,0])
     draw_board()
+
     draw_debug_info()
+
     draw_gui()
+    draw_tile_highlight(location=((pg.mouse.get_pos()[0] + VIEW_PORT_CENTRE[0]) // GRID_SCALE * GRID_SCALE - VIEW_PORT_CENTRE[0],
+                                  ((pg.mouse.get_pos()[1] + VIEW_PORT_CENTRE[1]) // GRID_SCALE * GRID_SCALE - VIEW_PORT_CENTRE[1])))
 
     pg.display.flip()
 

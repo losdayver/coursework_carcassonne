@@ -57,6 +57,6 @@ def draw_gui():
     SCREEN.blit(pg.transform.scale(game_board.Tile.selected_tile.sprite, [60, 60]), [20, 20])
 
 def draw_tile_highlight(location):
-    SCREEN.blit(game_board.Tile.selected_tile.sprite, location)
+    SCREEN.blit(game_board.Tile.selected_tile.sprite, location, special_flags=pg.BLEND_MAX)
 
 
