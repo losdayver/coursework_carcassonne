@@ -1,10 +1,5 @@
 import math
-
-import pygame
 import pygame as pg
-from settings import *
-import game_board
-
 from game_board import *
 from settings import *
 
@@ -54,9 +49,9 @@ def draw_debug_info():
 
 def draw_gui():
     SCREEN.fill([255,255,255], [0, 0, 100, SCREEN.get_rect()[3]])
-    SCREEN.blit(pg.transform.scale(game_board.Tile.selected_tile.sprite, [60, 60]), [20, 20])
+    SCREEN.blit(pg.transform.scale(pg.transform.rotate(Tile.selected_tile.sprite, Tile.selected_tile_rotation * 90), [60, 60]), [20, 20])
 
 def draw_tile_highlight(location):
-    SCREEN.blit(game_board.Tile.selected_tile.sprite, location, special_flags=pg.BLEND_MAX)
+    SCREEN.blit(pg.transform.rotate(Tile.selected_tile.sprite, Tile.selected_tile_rotation * 90), location, special_flags=pg.BLEND_MIN)
 
 
