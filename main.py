@@ -14,6 +14,9 @@ clock = pg.time.Clock()
 game_board.selected_tile = game_board.Tile.tiles_pile[-1]
 game_board.Tile.place_tile([5, 5], False)
 
+
+game_board.Player.participate_all()
+
 while 1:
     event = pg.event.get()
     for e in event:
@@ -46,10 +49,10 @@ while 1:
 
     elif not mouse_pressed[0]: can_press_mouse = True
 
-    SCREEN.fill([255,255,255])
+    SCREEN.fill([255, 255, 255])
     draw_board()
 
-    draw_debug_info()
+    #draw_debug_info()
 
     draw_tile_highlight(location=((pg.mouse.get_pos()[0] + VIEW_PORT_CENTRE[0]) // GRID_SCALE * GRID_SCALE - VIEW_PORT_CENTRE[0],
                                   ((pg.mouse.get_pos()[1] + VIEW_PORT_CENTRE[1]) // GRID_SCALE * GRID_SCALE - VIEW_PORT_CENTRE[1])))

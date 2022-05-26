@@ -1,6 +1,29 @@
 from settings import *
 import random
 
+class Player:
+    listed_players = []
+    current_players = []
+
+    def __init__(self, color, name='empty'):
+        self.sprite = MEEPLE_SPRITE.copy()
+        self.sprite.fill(color, special_flags=pg.BLEND_MIN)
+        self.name = name
+        self.score = 0
+        Player.listed_players.append(self)
+
+    def participate(self):
+        Player.current_players.append(self)
+
+    @staticmethod
+    def participate_all():
+        for p in Player.listed_players:
+            p.participate()
+
+
+for c in MEEPLE_COLORS:
+    Player(c)
+
 # Данный класс описывает тип тайла, а не отдельные сущности тайлов
 class Tile:
     total_amount = 72

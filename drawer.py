@@ -48,8 +48,16 @@ def draw_debug_info():
                     pg.draw.lines(SCREEN, color, False, vertex_array, 2)
 
 def draw_gui():
-    SCREEN.fill([255,255,255], [0, 0, 100, SCREEN.get_rect()[3]])
+    #SCREEN.fill([255,255,255], [0, 0, 100, SCREEN.get_rect()[3]])
     SCREEN.blit(pg.transform.scale(pg.transform.rotate(Tile.selected_tile.sprite, Tile.selected_tile_rotation * 90), [60, 60]), [20, 20])
+
+    text = REGULAR_FONT.render(f'Плиток осталось: {Tile.total_amount}', True, [0, 0, 0])
+    SCREEN.blit(text, [100, 50])
+
+    for i, p in enumerate(Player.current_players):
+        SCREEN.blit(p.sprite, [10, 100+i*40])
+        text = REGULAR_FONT.render(f'Игрок: {p.name}, Счет: {p.score}', True, [0,0,0])
+        SCREEN.blit(text, [50, 120+i*40])
 
 def draw_tile_highlight(location):
     SCREEN.blit(pg.transform.rotate(Tile.selected_tile.sprite, Tile.selected_tile_rotation * 90), location, special_flags=pg.BLEND_MIN)
