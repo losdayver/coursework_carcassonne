@@ -111,6 +111,8 @@ class Tile:
     has_at_least_one_connection = False
     @staticmethod
     def can_place_tile(location):
+        global has_at_least_one_connection
+        has_at_least_one_connection = False
         def check_adjecent(x, y, r1, r2, t, p):
             global has_at_least_one_connection
 
@@ -130,7 +132,8 @@ class Tile:
 
                     for i, c in enumerate(Tile.selected_tile.connections):
                         if c['connections'][(r2 + Tile.selected_tile_rotation) % 4]:
-                            replace_to_this = i + Tile._id_counter
+                            if replace_to_this not in Tile._connection_ids_to_replace:
+                                replace_to_this = i + Tile._id_counter
                             break
 
                     print(f'from: {replace_this}')
