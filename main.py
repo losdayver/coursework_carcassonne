@@ -12,11 +12,13 @@ can_press_rotate = True
 can_press_debug = True
 clock = pg.time.Clock()
 
-game_board.selected_tile = game_board.Tile.tiles_pile[-1]
-game_board.Tile.place_tile([5, 5], False)
-
-
 game_board.Player.participate_all()
+#game_board.Player.listed_players[0].participate()
+#game_board.Player.listed_players[1].participate()
+
+game_board.selected_tile = game_board.Tile.tiles_pile[-1]
+game_board.Tile.place_tile([7, 5], False)
+game_board.Player.turn = 0
 
 while 1:
     event = pg.event.get()

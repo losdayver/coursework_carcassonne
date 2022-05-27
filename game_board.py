@@ -2,6 +2,7 @@ from settings import *
 import random
 
 class Player:
+    turn = 0
     listed_players = []
     current_players = []
 
@@ -103,6 +104,8 @@ class Tile:
                         p['connection_ids'][i] = Tile._connection_ids_to_replace[id]
                     except(Exception): pass
 
+        Player.turn += 1
+        Player.turn %= len(Player.current_players)
         Tile.pick_random_tile()
 
     has_at_least_one_connection = False

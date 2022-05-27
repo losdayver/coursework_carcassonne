@@ -65,8 +65,11 @@ def draw_gui():
     SCREEN.blit(text, [100, 50])
 
     for i, p in enumerate(Player.current_players):
+
         SCREEN.blit(p.sprite, [10, 100+i*40])
         text = REGULAR_FONT.render(f'{p.name} Счет: {p.score}', True, [0,0,0])
+        if Player.turn == i:
+            SCREEN.blit(HAND_SIGN_SPRITE, [text.get_width() + 60, 120 + i * 40])
         SCREEN.blit(text, [50, 120+i*40])
 
 def draw_tile_highlight(location):

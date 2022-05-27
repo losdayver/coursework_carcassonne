@@ -15,6 +15,7 @@ MEEPLE_COLORS = [(200,0,0),
                  (50,50,50)]
 # Sprites
 MEEPLE_SPRITE = pg.image.load('./resources/meeple.png')
+HAND_SIGN_SPRITE = pg.image.load('./resources/hand_sign.png')
 
 REGULAR_FONT = pg.font.SysFont('Arial', 15)
 DEBUG_FONT = pg.font.SysFont('Comic Sans', 30)
