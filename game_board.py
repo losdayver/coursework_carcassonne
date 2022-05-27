@@ -20,12 +20,14 @@ class Player:
         for p in Player.listed_players:
             p.participate()
 
-
-for c in MEEPLE_COLORS:
-    Player(c)
+for i, c in enumerate(MEEPLE_COLORS):
+    Player(c, f'Игрок{i}')
 
 # Данный класс описывает тип тайла, а не отдельные сущности тайлов
 class Tile:
+    _connection_ids_to_replace = {}
+    _id_counter = 0
+
     total_amount = 72
     tiles_pile = [] # Список всех возможных видов тайлов
     selected_tile = None # Выбранный в данный момент тайл, который будет участвовать в следующем ходе
@@ -77,9 +79,7 @@ class Tile:
     def place_tile(location, test_if_can_be_placed = True):
         if test_if_can_be_placed and not Tile.can_place_tile(location): return
 
-        print(Tile.selected_tile.simlified_connections)
         is_place_occupied = False
-        print(location)
 
         for t in Tile.tiles_pile:
             for l in t.placements:
@@ -87,44 +87,62 @@ class Tile:
 
         Tile.selected_tile.quantity -= 1
         Tile.total_amount -= 1
-        Tile.selected_tile.placements.append({'location' : location, 'rotation' : Tile.selected_tile_rotation})
 
-        Tile.pick_random_tile()
+        connection_ids = []
 
-    @staticmethod
-    def can_place_tile(location):
-        has_at_least_one_connection = False
+        for c in Tile.selected_tile.connections:
+            connection_ids.append(Tile._id_counter)
+            Tile._id_counter += 1
+
+        Tile.selected_tile.placements.append({'location' : location, 'rotation' : Tile.selected_tile_rotation, 'connection_ids': connection_ids})
 
         for t in Tile.tiles_pile:
             for p in t.placements:
+                for i, id in enumerate(p['connection_ids']):
+                    try:
+                        p['connection_ids'][i] = Tile._connection_ids_to_replace[id]
+                    except(Exception): pass
 
-                # Проверяемый тайл выше текущего
-                if p['location'][0] == location[0] and p['location'][1] == location[1] - 1:
-                    has_at_least_one_connection = True
-                    if not t.simlified_connections[(2 + p['rotation']) % 4] == \
-                    Tile.selected_tile.simlified_connections[(0 + Tile.selected_tile_rotation) % 4]:
-                        return False
+        Tile.pick_random_tile()
 
-                # Проверяемый тайл ниже текущего
-                elif p['location'][0] == location[0] and p['location'][1] == location[1] + 1:
-                    has_at_least_one_connection = True
-                    if not t.simlified_connections[(0 + p['rotation']) % 4] == \
-                    Tile.selected_tile.simlified_connections[(2 + Tile.selected_tile_rotation) % 4]:
-                        return False
+    has_at_least_one_connection = False
+    @staticmethod
+    def can_place_tile(location):
+        def check_adjecent(x, y, r1, r2, t, p):
+            global has_at_least_one_connection
 
-                # Проверяемый тайл правее текущего
-                elif p['location'][0] == location[0] + 1 and p['location'][1] == location[1]:
-                    has_at_least_one_connection = True
-                    if not t.simlified_connections[(3 + p['rotation']) % 4] == \
-                    Tile.selected_tile.simlified_connections[(1 + Tile.selected_tile_rotation) % 4]:
-                        return False
+            if p['location'][0] == location[0] + x and p['location'][1] == location[1] + y:
+                has_at_least_one_connection = True
+                if not t.simlified_connections[(r1 + p['rotation']) % 4] == \
+                       Tile.selected_tile.simlified_connections[(r2 + Tile.selected_tile_rotation) % 4]:
+                    return True
+                else:
+                    # записываем во временную переенную какие id необходимо заменить на какие
+                    replace_this = -1
+                    replace_to_this = -1
+                    for i, c in enumerate(t.connections):
+                        if c['connections'][(r1 + p['rotation']) % 4]:
+                            replace_this = p['connection_ids'][i]
+                            break
 
-                # Проверяемый тайл левее текущего
-                elif p['location'][0] == location[0] - 1 and p['location'][1] == location[1]:
-                    has_at_least_one_connection = True
-                    if not t.simlified_connections[(1 + p['rotation']) % 4] == \
-                    Tile.selected_tile.simlified_connections[(3 + Tile.selected_tile_rotation) % 4]:
-                        return False
+                    for i, c in enumerate(Tile.selected_tile.connections):
+                        if c['connections'][(r2 + Tile.selected_tile_rotation) % 4]:
+                            replace_to_this = i + Tile._id_counter
+                            break
+
+                    print(f'from: {replace_this}')
+                    print(f'to: {replace_to_this}')
+
+                    if replace_this != -1 and replace_to_this != -1:
+                        Tile._connection_ids_to_replace[replace_this] = replace_to_this
+
+
+        for t in Tile.tiles_pile:
+            for p in t.placements:
+                if check_adjecent(0, -1, 2, 0, t, p) or \
+                check_adjecent(0, 1, 0, 2, t, p) or \
+                check_adjecent(1, 0, 3, 1, t, p) or \
+                check_adjecent(-1, 0, 1, 3, t, p): return False
 
 
         return has_at_least_one_connection
