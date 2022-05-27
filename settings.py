@@ -1,5 +1,6 @@
 import pygame as pg
 
+DEBUG_MODE = False
 FPS = 60
 GRID_SCALE = 78
 pg.init()
@@ -15,4 +16,5 @@ MEEPLE_COLORS = [(200,0,0),
 # Sprites
 MEEPLE_SPRITE = pg.image.load('./resources/meeple.png')
 
-REGULAR_FONT = pg.font.SysFont('Arial', 20)
+REGULAR_FONT = pg.font.SysFont('Arial', 15)
+DEBUG_FONT = pg.font.SysFont('Comic Sans', 30)

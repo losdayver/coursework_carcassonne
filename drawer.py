@@ -14,34 +14,44 @@ def draw_board(crop=2):
 def draw_debug_info():
     for t in Tile.tiles_pile:
         for l in t.placements:
-            for c in t.connections:
+            for i, c in enumerate(t.connections):
                 if c['type'] == 'road':
                     color = [0, 0, 255]
                 else: color = [255, 0, 0]
 
+
+
                 vertex_array = []
 
                 if c['connections'][(0 + l['rotation']) % 4]:
-                    vertex_array.append(
-                    (l['location'][0] * GRID_SCALE + GRID_SCALE / 2 - VIEW_PORT_CENTRE[0],
-                     l['location'][1] * GRID_SCALE - VIEW_PORT_CENTRE[1]))
+                    x = l['location'][0] * GRID_SCALE + GRID_SCALE / 2 - VIEW_PORT_CENTRE[0]
+                    y = l['location'][1] * GRID_SCALE - VIEW_PORT_CENTRE[1]
+                    vertex_array.append((x, y))
+                    text = DEBUG_FONT.render(f"{l['connection_ids'][i]}", True, color)
+                    SCREEN.blit(text, (x, y+5))
 
                 if c['connections'][(1 + l['rotation']) % 4]:
-                    vertex_array.append(
-                    (l['location'][0] * GRID_SCALE + GRID_SCALE - VIEW_PORT_CENTRE[0],
-                     l['location'][1] * GRID_SCALE + GRID_SCALE / 2 - VIEW_PORT_CENTRE[1]))
+                    x = l['location'][0] * GRID_SCALE + GRID_SCALE - VIEW_PORT_CENTRE[0]
+                    y = l['location'][1] * GRID_SCALE + GRID_SCALE / 2 - VIEW_PORT_CENTRE[1]
+                    vertex_array.append((x, y))
+                    text = DEBUG_FONT.render(f"{l['connection_ids'][i]}", True, color)
+                    SCREEN.blit(text, (x-20, y))
 
                 if c['connections'][(2 + l['rotation']) % 4]:
-                    vertex_array.append(
-                    (l['location'][0] * GRID_SCALE + GRID_SCALE / 2 - VIEW_PORT_CENTRE[0],
-                     l['location'][1] * GRID_SCALE + GRID_SCALE - VIEW_PORT_CENTRE[1]))
+                    x = l['location'][0] * GRID_SCALE + GRID_SCALE / 2 - VIEW_PORT_CENTRE[0]
+                    y = l['location'][1] * GRID_SCALE + GRID_SCALE - VIEW_PORT_CENTRE[1]
+                    vertex_array.append((x, y))
+                    text = DEBUG_FONT.render(f"{l['connection_ids'][i]}", True, color)
+                    SCREEN.blit(text, (x, y-20))
 
                 if c['connections'][(3 + l['rotation']) % 4]:
-                    vertex_array.append(
-                    (l['location'][0] * GRID_SCALE - VIEW_PORT_CENTRE[0],
-                     l['location'][1] * GRID_SCALE + GRID_SCALE / 2 - VIEW_PORT_CENTRE[1]))
+                    x = l['location'][0] * GRID_SCALE - VIEW_PORT_CENTRE[0]
+                    y = l['location'][1] * GRID_SCALE + GRID_SCALE / 2 - VIEW_PORT_CENTRE[1]
+                    vertex_array.append((x, y))
+                    text = DEBUG_FONT.render(f"{l['connection_ids'][i]}", True, color)
+                    SCREEN.blit(text, (x+5, y))
 
-                for v in vertex_array:
+                for i, v in enumerate(vertex_array):
                     pg.draw.circle(SCREEN, color, v, 5)
 
                 if len(vertex_array) > 1:
@@ -56,10 +66,12 @@ def draw_gui():
 
     for i, p in enumerate(Player.current_players):
         SCREEN.blit(p.sprite, [10, 100+i*40])
-        text = REGULAR_FONT.render(f'Игрок: {p.name}, Счет: {p.score}', True, [0,0,0])
+        text = REGULAR_FONT.render(f'{p.name} Счет: {p.score}', True, [0,0,0])
         SCREEN.blit(text, [50, 120+i*40])
 
 def draw_tile_highlight(location):
-    SCREEN.blit(pg.transform.rotate(Tile.selected_tile.sprite, Tile.selected_tile_rotation * 90), location, special_flags=pg.BLEND_MIN)
+    highlight_sprite = pg.transform.rotate(Tile.selected_tile.sprite, Tile.selected_tile_rotation * 90)
+    highlight_sprite.fill([0,40,100], special_flags=pg.BLEND_ADD)
+    SCREEN.blit(highlight_sprite, location, special_flags=pg.BLEND_MULT)
 
 

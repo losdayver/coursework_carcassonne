@@ -9,6 +9,7 @@ mouse_lock = False
 mouse_lock_location = [0,0]
 can_press_mouse = True
 can_press_rotate = True
+can_press_debug = True
 clock = pg.time.Clock()
 
 game_board.selected_tile = game_board.Tile.tiles_pile[-1]
@@ -41,6 +42,11 @@ while 1:
         game_board.Tile.selected_tile_rotation %= 4
     elif not keys_pressed[pg.K_r]: can_press_rotate = True
 
+    if can_press_debug and keys_pressed[pg.K_d]:
+        can_press_debug = False
+        DEBUG_MODE = not DEBUG_MODE
+    elif not keys_pressed[pg.K_d]: can_press_debug = True
+
     if mouse_pressed[0] and can_press_mouse:
         can_press_mouse = False
         game_board.Tile.place_tile(
@@ -52,7 +58,8 @@ while 1:
     SCREEN.fill([255, 255, 255])
     draw_board()
 
-    #draw_debug_info()
+    if DEBUG_MODE:
+        draw_debug_info()
 
     draw_tile_highlight(location=((pg.mouse.get_pos()[0] + VIEW_PORT_CENTRE[0]) // GRID_SCALE * GRID_SCALE - VIEW_PORT_CENTRE[0],
                                   ((pg.mouse.get_pos()[1] + VIEW_PORT_CENTRE[1]) // GRID_SCALE * GRID_SCALE - VIEW_PORT_CENTRE[1])))
