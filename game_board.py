@@ -29,6 +29,7 @@ class Tile:
     _connection_ids_to_replace = {}
     _id_counter = 0
 
+    structure_score = {}
     total_amount = 72
     tiles_pile = [] # Список всех возможных видов тайлов
     selected_tile = None # Выбранный в данный момент тайл, который будет участвовать в следующем ходе
@@ -79,8 +80,9 @@ class Tile:
     @staticmethod
     def place_tile(location, test_if_can_be_placed = True):
         if test_if_can_be_placed and not Tile.can_place_tile(location): return
-
-        is_place_occupied = False
+        elif not test_if_can_be_placed:
+            Tile.structure_score[0] = 1
+            Tile.structure_score[1] = 1
 
         for t in Tile.tiles_pile:
             for l in t.placements:
@@ -97,16 +99,31 @@ class Tile:
 
         Tile.selected_tile.placements.append({'location' : location, 'rotation' : Tile.selected_tile_rotation, 'connection_ids': connection_ids})
 
+        Tile.structure_score.clear()
+
         for t in Tile.tiles_pile:
             for p in t.placements:
                 for i, id in enumerate(p['connection_ids']):
+                    connection_ids_already_checked = []
+
                     try:
                         p['connection_ids'][i] = Tile._connection_ids_to_replace[id]
-                    except(Exception): pass
+                    except(Exception):
+                        pass
+
+                    if p['connection_ids'][i] in Tile.structure_score:
+                        if p['connection_ids'][i] not in connection_ids_already_checked:
+                            Tile.structure_score[p['connection_ids'][i]] += 1
+                            connection_ids_already_checked.append(p['connection_ids'][i])
+                    else: Tile.structure_score[p['connection_ids'][i]] = 1
+
+        Tile._connection_ids_to_replace.clear()
 
         Player.turn += 1
         Player.turn %= len(Player.current_players)
         Tile.pick_random_tile()
+
+        print(Tile.structure_score)
 
     has_at_least_one_connection = False
     @staticmethod
@@ -127,21 +144,24 @@ class Tile:
                     replace_to_this = -1
                     for i, c in enumerate(t.connections):
                         if c['connections'][(r1 + p['rotation']) % 4]:
-                            replace_this = p['connection_ids'][i]
+                            replace_to_this = p['connection_ids'][i]
                             break
 
                     for i, c in enumerate(Tile.selected_tile.connections):
                         if c['connections'][(r2 + Tile.selected_tile_rotation) % 4]:
-                            if replace_to_this not in Tile._connection_ids_to_replace:
-                                replace_to_this = i + Tile._id_counter
+                            replace_this = i + Tile._id_counter
+
+                            if replace_this in Tile._connection_ids_to_replace:
+                                buffer = replace_this
+                                replace_this = replace_to_this
+                                replace_to_this = Tile._connection_ids_to_replace[buffer]
+
                             break
 
-                    print(f'from: {replace_this}')
-                    print(f'to: {replace_to_this}')
-
-                    if replace_this != -1 and replace_to_this != -1:
+                    if replace_this != -1 and replace_to_this != -1 and replace_this != replace_to_this:
                         Tile._connection_ids_to_replace[replace_this] = replace_to_this
 
+                    #print(Tile._connection_ids_to_replace)
 
         for t in Tile.tiles_pile:
             for p in t.placements:
@@ -149,7 +169,6 @@ class Tile:
                 check_adjecent(0, 1, 0, 2, t, p) or \
                 check_adjecent(1, 0, 3, 1, t, p) or \
                 check_adjecent(-1, 0, 1, 3, t, p): return False
-
 
         return has_at_least_one_connection
 

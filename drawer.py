@@ -5,11 +5,11 @@ from settings import *
 
 def draw_board(crop=2):
     for t in Tile.tiles_pile:
-        for l in t.placements:
-            SCREEN.blit(source=pg.transform.rotate(t.sprite, l['rotation'] * 90).subsurface([
+        for p in t.placements:
+            SCREEN.blit(source=pg.transform.rotate(t.sprite, p['rotation'] * 90).subsurface([
                 crop,crop,t.sprite.get_width()-crop*2,t.sprite.get_height()-crop*2]),
-                        dest=[l['location'][0] * GRID_SCALE - VIEW_PORT_CENTRE[0] + crop,
-                              l['location'][1] * GRID_SCALE - VIEW_PORT_CENTRE[1] + crop])
+                        dest=[p['location'][0] * GRID_SCALE - VIEW_PORT_CENTRE[0] + crop,
+                              p['location'][1] * GRID_SCALE - VIEW_PORT_CENTRE[1] + crop])
 
 def draw_debug_info():
     for t in Tile.tiles_pile:
@@ -18,8 +18,6 @@ def draw_debug_info():
                 if c['type'] == 'road':
                     color = [0, 0, 255]
                 else: color = [255, 0, 0]
-
-
 
                 vertex_array = []
 
