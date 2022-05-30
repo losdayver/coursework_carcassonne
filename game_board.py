@@ -9,8 +9,12 @@ class Player:
     def __init__(self, color, name='empty'):
         self.sprite = MEEPLE_SPRITE.copy()
         self.sprite.fill(color, special_flags=pg.BLEND_MIN)
+        self.color = color
         self.name = name
         self.score = 0
+        self.meeples_left = 7
+        self.placed_meeples = {} # Здесь хранятся оккупированные миплами объекты вида { номер : количество миплов }
+        self.meeples_coords = []
         Player.listed_players.append(self)
 
     def participate(self):
@@ -20,6 +24,9 @@ class Player:
     def participate_all():
         for p in Player.listed_players:
             p.participate()
+
+game_modes = { 'tile_placing', 'meeple_placing'}
+current_game_mode = 'tile_placing'
 
 for i, c in enumerate(MEEPLE_COLORS):
     Player(c, f'Игрок{i}')
@@ -35,12 +42,14 @@ class Tile:
     selected_tile = None # Выбранный в данный момент тайл, который будет участвовать в следующем ходе
     selected_tile_rotation = 0 # Вращение выбранного тайла
 
+    last_placed_tile = None
+
     def __init__(self, sprite:pg.Surface, quantity:int, connections:list=[], has_monastery:bool=False, has_shield:bool=False):
         # Количество тайлов данного типа в колоде (осталось)
         self.quantity = quantity
 
         # Здесь прописаны поля, дороги, города на тайле, а также их соединения
-        self.connections = connections # { 'type' : 'town', 'connections' : [True, False, False, True]}
+        self.connections = connections # { 'type' : 'town', 'connections' : [True, False, False, True], 'meeples' : []}
 
         # Данный список хранит какие типы соединений имеет тайл со всех сторон без информации о соединениях
         self.simlified_connections = ['field', 'field', 'field', 'field']
@@ -62,7 +71,7 @@ class Tile:
         self.index = len(Tile.tiles_pile)
 
         # Список координат и вращений тайлов этого типа на доске
-        self.placements = [] # { location : (x,y), rotation : r }
+        self.placements = [] # { location : (x,y), rotation : r, connection_ids: [] }
 
         Tile.tiles_pile.append(self)
 
@@ -79,14 +88,16 @@ class Tile:
 
     @staticmethod
     def place_tile(location, test_if_can_be_placed = True):
-        if test_if_can_be_placed and not Tile.can_place_tile(location): return
+        global current_game_mode
+
+        if test_if_can_be_placed and not Tile.can_place_tile(location): return False
         elif not test_if_can_be_placed:
             Tile.structure_score[0] = 1
             Tile.structure_score[1] = 1
 
         for t in Tile.tiles_pile:
             for l in t.placements:
-                if l['location'] == location: return
+                if l['location'] == location: return False
 
         Tile.selected_tile.quantity -= 1
         Tile.total_amount -= 1
@@ -97,7 +108,9 @@ class Tile:
             connection_ids.append(Tile._id_counter)
             Tile._id_counter += 1
 
-        Tile.selected_tile.placements.append({'location' : location, 'rotation' : Tile.selected_tile_rotation, 'connection_ids': connection_ids})
+        Tile.selected_tile.placements.append({'location' : location,
+                                              'rotation' : Tile.selected_tile_rotation,
+                                              'connection_ids': connection_ids})
 
         Tile.structure_score.clear()
 
@@ -119,11 +132,13 @@ class Tile:
 
         Tile._connection_ids_to_replace.clear()
 
-        Player.turn += 1
-        Player.turn %= len(Player.current_players)
+        Tile.last_placed_tile = Tile.selected_tile
+
         Tile.pick_random_tile()
 
         print(Tile.structure_score)
+
+        return True
 
     has_at_least_one_connection = False
     @staticmethod

@@ -11,6 +11,8 @@ mouse_lock_location = [0, 0]
 can_press_mouse = True
 can_press_rotate = True
 can_press_debug = True
+can_place_meeple = False
+meeple_orientation = None
 
 clock = pg.time.Clock()
 
@@ -30,6 +32,44 @@ while 1:
     keys_pressed = pg.key.get_pressed()
     mouse_pressed = pg.mouse.get_pressed(3)
 
+    if current_game_mode == 'tile_placing':
+        if keys_pressed[pg.K_r] and can_press_rotate:
+            can_press_rotate = False
+            game_board.Tile.selected_tile_rotation += 1
+            game_board.Tile.selected_tile_rotation %= 4
+        elif not keys_pressed[pg.K_r]:
+            can_press_rotate = True
+
+        if mouse_pressed[0] and can_press_mouse:
+            can_press_mouse = False
+            if game_board.Tile.place_tile(
+                location=((pg.mouse.get_pos()[0] + VIEW_PORT_CENTRE[0]) // GRID_SCALE,
+                          (pg.mouse.get_pos()[1] + VIEW_PORT_CENTRE[1]) // GRID_SCALE), ):
+                current_game_mode = 'meeple_placing'
+
+        elif not mouse_pressed[0]:
+            can_press_mouse = True
+    elif current_game_mode == 'meeple_placing':
+        if mouse_pressed[0] and can_place_meeple:
+
+            if meeple_orientation != None:
+                Player.current_players[Player.turn].meeples_coords.append(meeple_orientation)
+
+            can_place_meeple = False
+            print(meeple_orientation)
+            current_game_mode = 'tile_placing'
+            Player.turn += 1
+            Player.turn %= len(Player.current_players)
+            print(current_game_mode)
+        elif not mouse_pressed[0]:
+            can_place_meeple = True
+
+    if can_press_debug and keys_pressed[pg.K_d]:
+        can_press_debug = False
+        DEBUG_MODE = not DEBUG_MODE
+    elif not keys_pressed[pg.K_d]:
+        can_press_debug = True
+
     if mouse_pressed[2] or keys_pressed[pg.K_SPACE]:
         if not mouse_lock:
             mouse_lock = True
@@ -41,37 +81,25 @@ while 1:
     else:
         mouse_lock = False
 
-    if keys_pressed[pg.K_r] and can_press_rotate:
-        can_press_rotate = False
-        game_board.Tile.selected_tile_rotation += 1
-        game_board.Tile.selected_tile_rotation %= 4
-    elif not keys_pressed[pg.K_r]:
-        can_press_rotate = True
-
-    if can_press_debug and keys_pressed[pg.K_d]:
-        can_press_debug = False
-        DEBUG_MODE = not DEBUG_MODE
-    elif not keys_pressed[pg.K_d]:
-        can_press_debug = True
-
-    if mouse_pressed[0] and can_press_mouse:
-        can_press_mouse = False
-        game_board.Tile.place_tile(
-            location=((pg.mouse.get_pos()[0] + VIEW_PORT_CENTRE[0]) // GRID_SCALE,
-                      (pg.mouse.get_pos()[1] + VIEW_PORT_CENTRE[1]) // GRID_SCALE), )
-
-    elif not mouse_pressed[0]:
-        can_press_mouse = True
-
-
     SCREEN.fill([255, 255, 255])
+
+    if current_game_mode == 'tile_placing':
+        highlight_last_tile(abs((Player.turn-1)%len(Player.current_players)))
+    else: highlight_last_tile(Player.turn)
+
     draw_board()
+
+    if current_game_mode == 'tile_placing':
+        draw_tile_highlight(location=((pg.mouse.get_pos()[0] + VIEW_PORT_CENTRE[0]) // GRID_SCALE * GRID_SCALE - VIEW_PORT_CENTRE[0],
+                                  ((pg.mouse.get_pos()[1] + VIEW_PORT_CENTRE[1]) // GRID_SCALE * GRID_SCALE - VIEW_PORT_CENTRE[1])))
+    elif current_game_mode == 'meeple_placing':
+        meeple_orientation = draw_meeple_highlight()
+
+    draw_all_meeples()
 
     if DEBUG_MODE:
         draw_debug_info()
 
-    draw_tile_highlight(location=((pg.mouse.get_pos()[0] + VIEW_PORT_CENTRE[0]) // GRID_SCALE * GRID_SCALE - VIEW_PORT_CENTRE[0],
-                                  ((pg.mouse.get_pos()[1] + VIEW_PORT_CENTRE[1]) // GRID_SCALE * GRID_SCALE - VIEW_PORT_CENTRE[1])))
     draw_gui()
 
     pg.display.flip()
