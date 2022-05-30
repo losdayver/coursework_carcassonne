@@ -121,8 +121,7 @@ def draw_meeple_highlight():
                 meeple_highlight_location = [last_tile_location[0] + offset[0] - VIEW_PORT_CENTRE[0],
                                              last_tile_location[1] + offset[1] - VIEW_PORT_CENTRE[1]]
 
-            SCREEN.blit(Player.current_players[Player.turn].sprite,
-                       meeple_highlight_location,)
+            SCREEN.blit(Player.current_players[Player.turn].sprite, meeple_highlight_location)
 
             meeple_highlight_location[0] += VIEW_PORT_CENTRE[0]
             meeple_highlight_location[1] += VIEW_PORT_CENTRE[1]

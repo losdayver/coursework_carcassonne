@@ -56,11 +56,9 @@ while 1:
                 Player.current_players[Player.turn].meeples_coords.append(meeple_orientation)
 
             can_place_meeple = False
-            print(meeple_orientation)
             current_game_mode = 'tile_placing'
             Player.turn += 1
             Player.turn %= len(Player.current_players)
-            print(current_game_mode)
         elif not mouse_pressed[0]:
             can_place_meeple = True
 
@@ -83,9 +81,9 @@ while 1:
 
     SCREEN.fill([255, 255, 255])
 
-    if current_game_mode == 'tile_placing':
+    if current_game_mode == 'tile_placing' and Tile.total_amount < 71:
         highlight_last_tile(abs((Player.turn-1)%len(Player.current_players)))
-    else: highlight_last_tile(Player.turn)
+    elif Tile.total_amount < 71: highlight_last_tile(Player.turn)
 
     draw_board()
 
