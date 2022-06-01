@@ -1,88 +1,132 @@
 from settings import *
 import random
 
+game_modes = { 'tile_placing', 'meeple_placing' }
+'''Здесь расписаны все возможные режимы игры (фазы)'''
+
+current_game_mode = 'tile_placing'
+'''В данной переменной хранится текущий режим игры (фаза)'''
+
+
+'''---------------------------------------------КЛАССЫ------------------------------------------------------'''
+
 class Player:
-    turn = 0 # Номер игрока, который в данный момент ходит
-    listed_players = [] # Список игроков данной партии
-    current_players = [] # Список всех игроков в памяти приложения
+    '''Данный класс описывает игрока с его индивидуальными характеристиками, такими как: имя, цвет и т.д.'''
+
+    turn = 0
+    '''Номер игрока, который в данный момент ходит'''
+
+    listed_players = []
+    '''Список игроков данной партии'''
+
+    current_players = []
+    '''Список всех игроков в памяти приложения'''
 
     def __init__(self, color, name='empty'):
-        self.sprite = MEEPLE_SPRITE.copy() # Спрайт мипла копируется и окрашивается в сответствующий оттенок из MEEPLE_COLORS в settings.py
+        self.sprite = MEEPLE_SPRITE.copy()
+        '''Спрайт мипла копируется и окрашивается в сответствующий оттенок из MEEPLE_COLORS в settings.py'''
+
         self.sprite.fill(color, special_flags=pg.BLEND_MIN)
         self.color = color
         self.name = name
         self.score = 0
         self.meeples_left = 7
-        self.placed_meeples = {} # Здесь хранятся оккупированные миплами объекты вида { номер : количество миплов }
-        self.meeples_coords = [] # Список координат всех поставленных игроком миплов (необходимо для отрисовки)
-        Player.listed_players.append(self) # При создании игрок добавляется в список игроков
+        self.meeples_coords = []
+        '''Список координат всех поставленных игроком миплов (необходимо для отрисовки)'''
 
-    # При выполнении данной функции игрок добавляется в партию
+        Player.listed_players.append(self)
+        '''При создании игрок добавляется в список игроков'''
+
     def participate(self):
+        '''При выполнении данной функции игрок добавляется в партию'''
         Player.current_players.append(self)
 
-    # Данный метод добавляет всех игроков из списка listed_players в текущую партию
     @staticmethod
     def participate_all():
+        '''Данный метод добавляет всех игроков из списка listed_players в текущую партию'''
         for p in Player.listed_players:
             p.participate()
 
-game_modes = { 'tile_placing', 'meeple_placing' } # Здесь расписаны все возможные режимы игры (фазы)
-current_game_mode = 'tile_placing' # В данной переменной хранится текущий режим игры (фаза)
-
-for i, c in enumerate(MEEPLE_COLORS):
-    Player(c, f'Игрок{i}')
-
-Player.listed_players[0].name = 'Олежка пельмежка'
-
-# Данный класс описывает тип тайла, а не отдельные сущности тайлов
 class Tile:
-    _connection_ids_to_replace = {} # Временная переменная для can_place_tile()
-    id_counter = 0 # Счетчик айдишников строений
+    '''Данный класс описывает тип тайла, а не отдельные сущности тайлов'''
 
-    structure_score = {} # В данной переменной хранится счет всех строений текущей партии
-    total_amount = 72 # Количество всех тайлов в игре
-    tiles_pile = [] # Список всех возможных видов тайлов
-    selected_tile = None # Выбранный в данный момент тайл, который будет участвовать в следующем ходе
-    selected_tile_rotation = 0 # Вращение выбранного тайла
+    _connection_ids_to_replace = {}
+    '''Временная переменная для can_place_tile()'''
 
-    last_placed_tile = None # Данная переменная ссылается на прошлый поставленный тайл
+    id_counter = 0
+    '''Счетчик айдишников строений'''
+
+    structure_score = {}
+    '''В данной переменной хранится счет всех строений текущей партии'''
+
+    total_amount = 72
+    '''Количество всех тайлов в игре'''
+
+    tiles_pile = []
+    '''Список всех возможных видов тайлов'''
+
+    selected_tile = None
+    '''Выбранный в данный момент тайл, который будет участвовать в следующем ходе'''
+
+    selected_tile_rotation = 0
+    '''Вращение выбранного тайла'''
+
+    last_placed_tile = None
+    '''Данная переменная ссылается на прошлый поставленный тайл'''
 
     def __init__(self, sprite:pg.Surface, quantity:int, connections:list=[], has_monastery:bool=False, has_shield:bool=False):
-        # Количество тайлов данного типа в колоде (осталось)
+        '''
+        :param sprite: спрайт тайла
+        :param quantity: количество тайлов данного типа в колоде
+        :param connections: соединения тайла
+        :param has_monastery: есть ли монастырь?
+        :param has_shield: есть ли щит?
+        '''
+
         self.quantity = quantity
+        '''Количество тайлов данного типа в колоде (осталось)'''
 
-        # Здесь прописаны поля, дороги, города на тайле, а также их соединения
-        self.connections = connections # { 'type' : 'town', 'connections' : [True, False, False, True], 'meeples' : []}
+        self.connections = connections
+        '''
+        Здесь прописаны поля, дороги, города на тайле, а также их соединения\n
+        { 'type' : 'town', 'connections' : [True, False, False, True], 'meeples' : []}
+        '''
 
-        # Данный список хранит какие типы соединений имеет тайл со всех сторон без информации о соединениях
         self.simlified_connections = ['field', 'field', 'field', 'field']
+        '''Данный список хранит какие типы соединений имеет тайл со всех сторон без информации о соединениях'''
 
         for connection in self.connections:
             for i, con in enumerate(connection['connections']):
                 if con: self.simlified_connections[i] = connection['type']
 
-        # Есть ли монастырь?
+
         self.has_monastery = has_monastery
+        '''Есть ли монастырь?'''
 
-        # Есть ли щит?
         self.has_shield = has_shield
+        '''Есть ли щит?'''
 
-        # Картинка тайла из папки ./Resources
         self.sprite = sprite
+        '''Картинка тайла из папки ./Resources'''
 
-        # Индекс тайла в списке tiles_pile
         self.index = len(Tile.tiles_pile)
+        '''Индекс тайла в списке tiles_pile'''
 
-        # Список координат и вращений тайлов этого типа на доске
-        self.placements = [] # { location : (x,y), rotation : r, connection_ids: [] }
 
-        # При создании типа тайла он добавляется в список всех возможных тайлов
+        self.placements = []
+        '''
+        Список координат и вращений тайлов этого типа на доске\n
+        { location : (x,y), rotation : r, connection_ids: [] }
+        '''
+
+
         Tile.tiles_pile.append(self)
+        '''При создании типа тайла он добавляется в список всех возможных тайло'''
 
-    # Данный метод выбирает случайный тайл из списка всех возможных (при условии, что тайл, выбранный случайным образом все еще в "колоде")
     @staticmethod
     def pick_random_tile():
+        '''Данный метод выбирает случайный тайл из списка всех возможных (при условии, что тайл, выбранный случайным образом все еще в "колоде")'''
+
         random_number = random.randint(0, Tile.total_amount)
         counter = 0
 
@@ -92,13 +136,19 @@ class Tile:
                 Tile.selected_tile = t
                 return
 
-    # Данный метод выставляет тайл на доску (если это возмжно), а также делает все необходимые расчеты за ход
     @staticmethod
-    def place_tile(location, test_if_can_be_placed = True):
+    def place_tile(location, is_this_the_first_tile = True):
+        '''
+        Данный метод выставляет тайл на доску (если это возмжно), а также делает все необходимые расчеты за ход
+
+        :param location: tuple с координатами (x, y)
+
+        :param is_this_the_first_tile: True, если это стартовый (первый) тайл
+        '''
         global current_game_mode
 
-        if test_if_can_be_placed and not Tile.can_place_tile(location): return False
-        elif not test_if_can_be_placed:
+        if is_this_the_first_tile and not Tile.can_place_tile(location): return False
+        elif not is_this_the_first_tile:
             Tile.structure_score[0] = 1
             Tile.structure_score[1] = 1
 
@@ -117,7 +167,8 @@ class Tile:
 
         Tile.selected_tile.placements.append({'location' : location,
                                               'rotation' : Tile.selected_tile_rotation,
-                                              'connection_ids': connection_ids})
+                                              'connection_ids' : connection_ids,
+                                              'connection_meeples' : [None,] * len(connection_ids)})
 
         Tile.structure_score.clear()
 
@@ -134,8 +185,11 @@ class Tile:
                     if p['connection_ids'][i] in Tile.structure_score:
                         if p['connection_ids'][i] not in connection_ids_already_checked:
                             Tile.structure_score[p['connection_ids'][i]] += 1
+                            if t.has_shield: Tile.structure_score[p['connection_ids'][i]] += 1
                             connection_ids_already_checked.append(p['connection_ids'][i])
-                    else: Tile.structure_score[p['connection_ids'][i]] = 1
+                    else:
+                        Tile.structure_score[p['connection_ids'][i]] = 1
+                        if t.has_shield: Tile.structure_score[p['connection_ids'][i]] += 1
 
         Tile._connection_ids_to_replace.clear()
 
@@ -145,10 +199,17 @@ class Tile:
 
         return True
 
-    # Данная функция проверяет возможность установки тайла на позицию location
     has_at_least_one_connection = False
     @staticmethod
-    def can_place_tile(location):
+    def can_place_tile(location:tuple) -> bool:
+        '''
+        Данная функция проверяет возможность установки тайла на позицию location
+
+        :param location: tuple с координатами (x, y)
+
+        :returns bool: возвращает True, если установка тайла возможна
+        '''
+
         global has_at_least_one_connection
         has_at_least_one_connection = False
         def check_adjecent(x, y, r1, r2, t, p):
@@ -160,7 +221,7 @@ class Tile:
                        Tile.selected_tile.simlified_connections[(r2 + Tile.selected_tile_rotation) % 4]:
                     return True
                 else:
-                    # записываем во временную переенную какие id необходимо заменить на какие
+                    '''записываем во временную переенную какие id необходимо заменить на какие'''
                     replace_this = -1
                     replace_to_this = -1
                     for i, c in enumerate(t.connections):
@@ -191,7 +252,48 @@ class Tile:
 
         return has_at_least_one_connection
 
-# Здесь описаны все возможные виды тайлов в оригинальной игре
+
+'''------------------------------------------------ГЛОБАЛЬНЫЕ ФУНКЦИИ---------------------------------------------'''
+
+def place_meeple(orientation, location):
+    '''
+    Возвращает True, если ход завершен, возвращает False, если мипла нельзя поставить
+
+    :param orientation: строка, описывающая положение устанавливаемого мипла на тайле
+    '''
+    print(orientation)
+    if orientation == None:
+        return True
+
+    if orientation == 'centre':
+        if Tile.last_placed_tile.has_monastery:
+            Player.current_players[Player.turn].meeples_coords.append(location)
+            Player.current_players[Player.turn].meeples_left -= 1
+            return True
+        else: return False
+
+
+    for l in Tile.last_placed_tile.connections:
+        for i, c in enumerate(Tile.last_placed_tile.connections):
+            index_rotated = Tile.last_placed_tile.placements[-1]['rotation']
+            if orientation == 'right': index_rotated += 1
+            elif orientation == 'down': index_rotated += 2
+            elif orientation == 'left': index_rotated += 3
+            index_rotated %= 4
+
+            if c['connections'][index_rotated]:
+                Tile.last_placed_tile.placements[-1]['connection_meeples'][i] = Player.current_players[Player.turn]
+                Player.current_players[Player.turn].meeples_coords.append(location)
+                Player.current_players[Player.turn].meeples_left -= 1
+                return True
+    return False
+
+for i, c in enumerate(MEEPLE_COLORS):
+    Player(c, f'Игрок{i}')
+
+Player.listed_players[0].name = 'Олежка пельмежка'
+
+'''Здесь описаны все возможные виды тайлов в оригинальной игре'''
 Tile(quantity=4,
     connections=[],
     has_monastery = True,
@@ -336,7 +438,7 @@ Tile(quantity=1,
         { 'type' : 'road', 'connections' : [False, False, False, True]}],
     sprite = pg.image.load('./resources/tile-x.png'))
 
-# Starting tile
+'''Starting tile'''
 Tile.selected_tile = Tile(quantity=1,
     connections=[
         { 'type' : 'town', 'connections' : [True, False, False, False]},
