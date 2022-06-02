@@ -4,6 +4,12 @@ from game_board import *
 from settings import *
 
 def draw_board(crop=2):
+    '''
+    Функция выводит игровую доску на экран
+
+    :param crop: Обрезка тайлов по краям
+    '''
+
     for t in Tile.tiles_pile:
         for p in t.placements:
             SCREEN.blit(source=pg.transform.rotate(t.sprite, p['rotation'] * 90).subsurface([
@@ -12,6 +18,10 @@ def draw_board(crop=2):
                               p['location'][1] * GRID_SCALE - VIEW_PORT_CENTRE[1] + crop])
 
 def draw_debug_info():
+    '''
+    Выводит информацию для разработчика
+    '''
+
     for t in Tile.tiles_pile:
         for l in t.placements:
             for i, c in enumerate(t.connections):
@@ -54,6 +64,10 @@ def draw_debug_info():
 
                 if len(vertex_array) > 1:
                     pg.draw.lines(SCREEN, color, False, vertex_array, 2)
+
+    for i, s in enumerate(Tile.structure_score):
+        text = text = DEBUG_FONT.render(f"{s} : {Tile.structure_score[s]}", True, [0,0,0])
+        SCREEN.blit(text, (pg.display.get_window_size()[0] - text.get_width(), i * 20))
 
 def draw_gui():
     SCREEN.blit(pg.transform.scale(Tile.selected_tile.sprite, [60, 60]), [20, 20])
@@ -126,12 +140,12 @@ def draw_meeple_highlight():
 
     return (meeple_highlight_location, meeple_orientation)
 
-highlight_last_tile_margin = 3
+highlight_last_tile_margin = 1
 def highlight_last_tile(turn):
     SCREEN.fill(Player.current_players[turn].color,
-                [Tile.last_placed_tile.placements[-1]['location'][0] * GRID_SCALE - VIEW_PORT_CENTRE[0],
-                 Tile.last_placed_tile.placements[-1]['location'][1] * GRID_SCALE - VIEW_PORT_CENTRE[1],
-                 GRID_SCALE, GRID_SCALE])
+                [Tile.last_placed_tile.placements[-1]['location'][0] * GRID_SCALE - VIEW_PORT_CENTRE[0] - highlight_last_tile_margin,
+                 Tile.last_placed_tile.placements[-1]['location'][1] * GRID_SCALE - VIEW_PORT_CENTRE[1] - highlight_last_tile_margin,
+                 GRID_SCALE + highlight_last_tile_margin*2, GRID_SCALE + highlight_last_tile_margin*2])
 
 def draw_all_meeples():
     for plr in Player.current_players:

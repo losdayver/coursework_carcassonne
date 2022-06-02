@@ -22,6 +22,12 @@ class Player:
     current_players = []
     '''Список всех игроков в памяти приложения'''
 
+    occupied_structures = {}
+    '''
+    В данном словаре хранятся занятые игроком структуры и количество миплов на них\n
+    { <номер структуры> : { <игрок> : <количество миплов>, <игрок> : <количество миплов>, } }
+    '''
+
     def __init__(self, color, name='empty'):
         self.sprite = MEEPLE_SPRITE.copy()
         '''Спрайт мипла копируется и окрашивается в сответствующий оттенок из MEEPLE_COLORS в settings.py'''
@@ -145,6 +151,9 @@ class Tile:
 
         :param is_this_the_first_tile: True, если это стартовый (первый) тайл
         '''
+        Tile.structure_score.clear()
+        Player.occupied_structures.clear()
+
         global current_game_mode
 
         if is_this_the_first_tile and not Tile.can_place_tile(location): return False
@@ -168,14 +177,29 @@ class Tile:
         Tile.selected_tile.placements.append({'location' : location,
                                               'rotation' : Tile.selected_tile_rotation,
                                               'connection_ids' : connection_ids,
-                                              'connection_meeples' : [None,] * len(connection_ids)})
-
-        Tile.structure_score.clear()
+                                              'connection_meeples' : [None,] * len(connection_ids),
+                                              'enclosed_connections' : [False, False, False, False]})
 
         for t in Tile.tiles_pile:
             for p in t.placements:
                 for i, id in enumerate(p['connection_ids']):
                     connection_ids_already_checked = []
+
+
+                    '''Данный фрагмент кода отвечает за подсчет 
+                    количества миплов на каждом соединении 
+                    и записывает их в Player.occupied_structures'''
+
+                    plr = p['connection_meeples'][i]
+
+                    if plr != None:
+                        if id in Player.occupied_structures and plr in Player.occupied_structures[id]:
+                            Player.occupied_structures[id][plr] += 1
+                        elif id in Player.occupied_structures and any(Player.occupied_structures[id]):
+                            Player.occupied_structures[id][plr] = 1
+                        else:
+                            Player.occupied_structures[id] = {}
+                            Player.occupied_structures[id][plr] = 1
 
                     try:
                         p['connection_ids'][i] = Tile._connection_ids_to_replace[id]
@@ -194,8 +218,6 @@ class Tile:
         Tile._connection_ids_to_replace.clear()
 
         Tile.last_placed_tile = Tile.selected_tile
-
-        Tile.pick_random_tile()
 
         return True
 
@@ -221,7 +243,7 @@ class Tile:
                        Tile.selected_tile.simlified_connections[(r2 + Tile.selected_tile_rotation) % 4]:
                     return True
                 else:
-                    '''записываем во временную переенную какие id необходимо заменить на какие'''
+                    '''записываем в временную переменную какие id необходимо заменить на какие'''
                     replace_this = -1
                     replace_to_this = -1
                     for i, c in enumerate(t.connections):
@@ -261,17 +283,19 @@ def place_meeple(orientation, location):
 
     :param orientation: строка, описывающая положение устанавливаемого мипла на тайле
     '''
-    print(orientation)
+
+    #print(orientation)
     if orientation == None:
+        Tile.pick_random_tile()
         return True
 
     if orientation == 'centre':
         if Tile.last_placed_tile.has_monastery:
             Player.current_players[Player.turn].meeples_coords.append(location)
             Player.current_players[Player.turn].meeples_left -= 1
+            Tile.pick_random_tile()
             return True
         else: return False
-
 
     for l in Tile.last_placed_tile.connections:
         for i, c in enumerate(Tile.last_placed_tile.connections):
@@ -282,9 +306,13 @@ def place_meeple(orientation, location):
             index_rotated %= 4
 
             if c['connections'][index_rotated]:
+
+                if Tile.last_placed_tile.placements[-1]['connection_ids'][i] in Player.occupied_structures: return False
+
                 Tile.last_placed_tile.placements[-1]['connection_meeples'][i] = Player.current_players[Player.turn]
                 Player.current_players[Player.turn].meeples_coords.append(location)
                 Player.current_players[Player.turn].meeples_left -= 1
+                Tile.pick_random_tile()
                 return True
     return False
 
@@ -444,4 +472,3 @@ Tile.selected_tile = Tile(quantity=1,
         { 'type' : 'town', 'connections' : [True, False, False, False]},
         { 'type' : 'road', 'connections' : [False, True, False, True]}],
     sprite = pg.image.load('./resources/tile-d.png'))
-
