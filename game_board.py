@@ -53,11 +53,27 @@ class Player:
         for p in Player.listed_players:
             p.participate()
 
+    @staticmethod
+    def return_meeples():
+        for s in Player.occupied_structures:
+            if s in Tile.finished_structures:
+                for p in Player.occupied_structures[s]:
+                    p.score += 1
+                Player.occupied_structures[s] = {}
+
 class Tile:
     '''Данный класс описывает тип тайла, а не отдельные сущности тайлов'''
 
     _connection_ids_to_replace = {}
     '''Временная переменная для can_place_tile()'''
+
+    _placements_to_modify = {}
+
+    _current_tile_placement_to_modify = []
+
+    _finished_structures = {}
+
+    finished_structures = []
 
     id_counter = 0
     '''Счетчик айдишников строений'''
@@ -153,6 +169,7 @@ class Tile:
         '''
         Tile.structure_score.clear()
         Player.occupied_structures.clear()
+        Tile._finished_structures.clear()
 
         global current_game_mode
 
@@ -174,14 +191,28 @@ class Tile:
             connection_ids.append(Tile.id_counter)
             Tile.id_counter += 1
 
-        Tile.selected_tile.placements.append({'location' : location,
-                                              'rotation' : Tile.selected_tile_rotation,
-                                              'connection_ids' : connection_ids,
-                                              'connection_meeples' : [None,] * len(connection_ids),
-                                              'enclosed_connections' : [False, False, False, False]})
+        tile_temp = { 'location' : location,
+                      'rotation' : Tile.selected_tile_rotation,
+                      'connection_ids' : connection_ids,
+                      'connection_meeples' : [None,] * len(connection_ids),
+                      'connection_score_to_enclose' : [0,] * len(connection_ids) }
+
+        # enclosed_ids_connections заполняем значениями, равными количеству листьев графа соответствующего соединения
+        for i, connection in enumerate(Tile.selected_tile.connections):
+            for c in connection['connections']:
+                if c: tile_temp['connection_score_to_enclose'][i] += 1
+
+        for i, connection in enumerate(tile_temp['connection_score_to_enclose']):
+            if i in Tile._current_tile_placement_to_modify: tile_temp['connection_score_to_enclose'][i] -= 1
+
+        Tile.selected_tile.placements.append(tile_temp)
 
         for t in Tile.tiles_pile:
             for p in t.placements:
+
+                if (p['location'][0], p['location'][1]) in Tile._placements_to_modify:
+                    p['connection_score_to_enclose'][Tile._placements_to_modify[p['location'][0], p['location'][1]]] -= 1
+
                 for i, id in enumerate(p['connection_ids']):
                     connection_ids_already_checked = []
 
@@ -193,18 +224,24 @@ class Tile:
                     plr = p['connection_meeples'][i]
 
                     if plr != None:
-                        if id in Player.occupied_structures and plr in Player.occupied_structures[id]:
-                            Player.occupied_structures[id][plr] += 1
-                        elif id in Player.occupied_structures and any(Player.occupied_structures[id]):
-                            Player.occupied_structures[id][plr] = 1
+                        if p['connection_ids'][i] in Tile.finished_structures:
+                            p['connection_meeples'][i] = None
                         else:
-                            Player.occupied_structures[id] = {}
-                            Player.occupied_structures[id][plr] = 1
+                            if id in Player.occupied_structures and plr in Player.occupied_structures[id]:
+                                Player.occupied_structures[id][plr] += 1
+                            elif id in Player.occupied_structures and any(Player.occupied_structures[id]):
+                                Player.occupied_structures[id][plr] = 1
+                            else:
+                                Player.occupied_structures[id] = {}
+                                Player.occupied_structures[id][plr] = 1
 
                     try:
                         p['connection_ids'][i] = Tile._connection_ids_to_replace[id]
                     except(Exception):
                         pass
+
+                    if p['connection_score_to_enclose'][i] != 0:
+                        Tile._finished_structures[id] = False
 
                     if p['connection_ids'][i] in Tile.structure_score:
                         if p['connection_ids'][i] not in connection_ids_already_checked:
@@ -219,6 +256,13 @@ class Tile:
 
         Tile.last_placed_tile = Tile.selected_tile
 
+        for i in Tile.structure_score:
+            if i not in Tile._finished_structures:
+                if i not in Tile.finished_structures:
+                    Tile.finished_structures.append(i)
+
+        print(Tile._finished_structures)
+
         return True
 
     has_at_least_one_connection = False
@@ -232,6 +276,9 @@ class Tile:
         :returns bool: возвращает True, если установка тайла возможна
         '''
 
+        Tile._placements_to_modify.clear()
+        Tile._current_tile_placement_to_modify.clear()
+
         global has_at_least_one_connection
         has_at_least_one_connection = False
         def check_adjecent(x, y, r1, r2, t, p):
@@ -241,18 +288,26 @@ class Tile:
                 has_at_least_one_connection = True
                 if not t.simlified_connections[(r1 + p['rotation']) % 4] == \
                        Tile.selected_tile.simlified_connections[(r2 + Tile.selected_tile_rotation) % 4]:
+                    # Тайл поставить нельзя
                     return True
                 else:
-                    '''записываем в временную переменную какие id необходимо заменить на какие'''
+                    # Тайл поставить можно
+                    #записываем в временную переменную какие id необходимо заменить на какие
                     replace_this = -1
                     replace_to_this = -1
                     for i, c in enumerate(t.connections):
                         if c['connections'][(r1 + p['rotation']) % 4]:
                             replace_to_this = p['connection_ids'][i]
+
+                            Tile._placements_to_modify[p['location'][0], p['location'][1]] = i
+
                             break
 
                     for i, c in enumerate(Tile.selected_tile.connections):
                         if c['connections'][(r2 + Tile.selected_tile_rotation) % 4]:
+
+                            Tile._current_tile_placement_to_modify.append(i)
+
                             replace_this = i + Tile.id_counter
 
                             if replace_this in Tile._connection_ids_to_replace:

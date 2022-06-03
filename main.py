@@ -62,6 +62,8 @@ while 1:
                     Player.turn += 1
                     Player.turn %= len(Player.current_players)
 
+                    Player.return_meeples()
+
         elif not mouse_pressed[0]:
             CAN_PLACE_MEEPLE = True
 
