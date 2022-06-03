@@ -17,6 +17,28 @@ def draw_board(crop=2):
                         dest=[p['location'][0] * GRID_SCALE - VIEW_PORT_CENTRE[0] + crop,
                               p['location'][1] * GRID_SCALE - VIEW_PORT_CENTRE[1] + crop])
 
+            for j, m in enumerate(p['connection_meeples']):
+                for i, c in enumerate(t.connections[j]['connections']):
+                    if m != None and c:
+                        rot_index = (i - p['rotation']) % 4
+
+                        loc = (p['location'][0] * GRID_SCALE - VIEW_PORT_CENTRE[0] + crop,
+                                    p['location'][1] * GRID_SCALE - VIEW_PORT_CENTRE[1] + crop)
+
+                        if rot_index == 0:
+                            SCREEN.blit(m.sprite, (loc[0] + 20, loc[1]))
+                        elif rot_index == 1:
+                            SCREEN.blit(m.sprite, (loc[0] + GRID_SCALE - MEEPLE_SPRITE.get_height(), loc[1] + 20))
+                        elif rot_index == 2:
+                            SCREEN.blit(m.sprite, (loc[0] + 20, loc[1] + GRID_SCALE - MEEPLE_SPRITE.get_height()))
+                        elif rot_index == 3:
+                            SCREEN.blit(m.sprite, (loc[0], loc[1] + 20))
+
+                        break
+
+
+
+
 def draw_debug_info():
     '''
     Выводит информацию для разработчика

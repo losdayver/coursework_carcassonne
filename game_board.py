@@ -185,6 +185,7 @@ class Tile:
         '''
         Tile.structure_score.clear()
         Player.occupied_structures.clear()
+        Tile._connection_ids_to_replace.clear()
 
         global current_game_mode
 
@@ -257,8 +258,6 @@ class Tile:
                             connection_ids_already_checked.append(p['connection_ids'][i])
                     else:
                         Tile.structure_score[p['connection_ids'][i]] = how_many_points
-
-        Tile._connection_ids_to_replace.clear()
 
         Tile.last_placed_tile = Tile.selected_tile
 

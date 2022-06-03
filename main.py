@@ -104,7 +104,7 @@ while 1:
 
         PLACING_MEEPLE_DATA = draw_meeple_highlight()
 
-    draw_all_meeples()
+    #draw_all_meeples()
 
     if DEBUG_MODE:
         draw_debug_info()
