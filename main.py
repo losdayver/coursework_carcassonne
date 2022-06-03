@@ -33,7 +33,7 @@ while 1:
 
     if current_game_mode == 'tile_placing':
 
-        '''Вращаение тайлов'''
+        # Вращаение тайлов
         if keys_pressed[pg.K_r] and CAN_PRESS_ROTATE:
             CAN_PRESS_ROTATE = False
             game_board.Tile.selected_tile_rotation += 1
@@ -41,7 +41,7 @@ while 1:
         elif not keys_pressed[pg.K_r]:
             CAN_PRESS_ROTATE = True
 
-        '''Установка тайлов'''
+        # Установка тайлов
         if mouse_pressed[0] and CAN_PRESS_MOUSE:
             CAN_PRESS_MOUSE = False
             if game_board.Tile.place_tile(
@@ -53,7 +53,7 @@ while 1:
 
     elif current_game_mode == 'meeple_placing':
 
-        '''Установка миплов'''
+        # Установка миплов
         if mouse_pressed[0] and CAN_PLACE_MEEPLE:
             if PLACING_MEEPLE_DATA != None:
                 if game_board.place_meeple(PLACING_MEEPLE_DATA[1], PLACING_MEEPLE_DATA[0]):
@@ -62,19 +62,19 @@ while 1:
                     Player.turn += 1
                     Player.turn %= len(Player.current_players)
 
-                    Player.return_meeples()
+                    #Tile.calculate_score()
 
         elif not mouse_pressed[0]:
             CAN_PLACE_MEEPLE = True
 
-    '''Режим дебага'''
+    # Режим дебага
     if CAN_PRESS_DEBUG and keys_pressed[pg.K_d]:
         CAN_PRESS_DEBUG = False
         DEBUG_MODE = not DEBUG_MODE
     elif not keys_pressed[pg.K_d]:
         CAN_PRESS_DEBUG = True
 
-    '''Перемещение вьюпорта'''
+    # Перемещение вьюпорта
     if mouse_pressed[2] or keys_pressed[pg.K_SPACE]:
         if not MOUSE_LOCK:
             MOUSE_LOCK = True
@@ -88,7 +88,7 @@ while 1:
 
     SCREEN.fill([255, 255, 255])
 
-    '''Отрисовка подсветки текущего / прошлого тайла'''
+    # Отрисовка подсветки текущего / прошлого тайла
     if current_game_mode == 'tile_placing' and Tile.total_amount < 71:
         highlight_last_tile(abs((Player.turn-1)%len(Player.current_players)))
     elif Tile.total_amount < 71: highlight_last_tile(Player.turn)

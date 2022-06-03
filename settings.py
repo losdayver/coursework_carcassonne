@@ -20,3 +20,4 @@ HAND_SIGN_SPRITE = pg.image.load('./resources/hand_sign.png')
 
 REGULAR_FONT = pg.font.SysFont('Arial', 15)
 DEBUG_FONT = pg.font.SysFont('Comic Sans', 30)
+SMALL_FONT = pg.font.SysFont('Comic Sans', 12)

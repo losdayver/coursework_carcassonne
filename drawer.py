@@ -25,6 +25,12 @@ def draw_debug_info():
     for t in Tile.tiles_pile:
         for l in t.placements:
             for i, c in enumerate(t.connections):
+
+                text = SMALL_FONT.render(f"{l['enclosed_connections']}", True, [0,0,0])
+                x = l['location'][0] * GRID_SCALE - VIEW_PORT_CENTRE[0]
+                y = l['location'][1] * GRID_SCALE - VIEW_PORT_CENTRE[1]
+                SCREEN.blit(text, (x, y + 5))
+
                 if c['type'] == 'road':
                     color = [0, 0, 255]
                 else: color = [255, 0, 0]
