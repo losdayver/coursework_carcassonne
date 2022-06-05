@@ -28,6 +28,12 @@ class Player:
     { <номер структуры> : { <игрок> : <количество миплов>, <игрок> : <количество миплов>, } }
     '''
 
+    monasteries = {}
+    '''
+    В данном списке хранятся монастыри и список клеток, необходимых для их завершения\n
+    { <позиция монастыря> : { 'player' : <игрок, занявший монастырь>, 'locations_left' : [], } }
+    '''
+
     unfinished_structures = []
     '''
     В данном списке хранятся id незавершенных структур
@@ -42,7 +48,7 @@ class Player:
         self.name = name
         self.score = 0
         self.meeples_left = 7
-        self.meeples_coords = []
+        #self.meeples_coords = []
         '''Список координат всех поставленных игроком миплов (необходимо для отрисовки)'''
 
         Player.listed_players.append(self)
@@ -60,14 +66,37 @@ class Player:
 
     @staticmethod
     def return_meeples():
+        structures_checked = []
+
         for t in Tile.tiles_pile:
             for p in t.placements:
+                if t.has_monastery and p['location'] in Player.monasteries:
+                    if not any(Player.monasteries[p['location']]['locations_left']):
+                        Player.monasteries[p['location']]['player'].score += 9
+                        del Player.monasteries[p['location']]
+
                 for i, m in enumerate(p['connection_ids']):
-                    if m not in Player.unfinished_structures:
+                    if m not in Player.unfinished_structures and m in Player.occupied_structures:
+
+                        if m not in structures_checked:
+                            structures_checked.append(m)
+                            max_count = 0
+
+                            for player in Player.occupied_structures[m]:
+                                if max_count == 0:
+                                    max_count = Player.occupied_structures[m][player]
+                                elif Player.occupied_structures[m][player] > max_count:
+                                    max_count = Player.occupied_structures[m][player]
+
+                            for player in Player.occupied_structures[m]:
+                                if Player.occupied_structures[m][player] == max_count:
+                                    player.score += Tile.structure_score[m]
+
                         if p['connection_meeples'][i] != None:
-                            p['connection_meeples'][i].score += Tile.structure_score[m]
                             p['connection_meeples'][i].meeples_left += 1
                             p['connection_meeples'][i] = None
+
+        print(Player.monasteries)
 
 class Tile:
     '''Данный класс описывает тип тайла, а не отдельные сущности тайлов'''
@@ -143,9 +172,8 @@ class Tile:
         { location : (x,y), rotation : r, connection_ids: [] }
         '''
 
-
         Tile.tiles_pile.append(self)
-        '''При создании типа тайла он добавляется в список всех возможных тайло'''
+        '''При создании типа тайла он добавляется в список всех возможных тайлов'''
 
     @staticmethod
     def pick_random_tile():
@@ -224,6 +252,8 @@ class Tile:
 
         for t in Tile.tiles_pile:
             for p in t.placements:
+                print(p['location'])
+
                 for i, id in enumerate(p['connection_ids']):
                     connection_ids_already_checked = []
 
@@ -259,11 +289,13 @@ class Tile:
                     else:
                         Tile.structure_score[p['connection_ids'][i]] = how_many_points
 
+                for monastery_position in Player.monasteries:
+                    if p['location'] in Player.monasteries[monastery_position]['locations_left']:
+                        Player.monasteries[monastery_position]['locations_left'].remove(p['location'])
+
         Tile.last_placed_tile = Tile.selected_tile
 
         Tile.find_unfinished_structures()
-
-        print(Player.unfinished_structures)
 
         return True
 
@@ -356,7 +388,17 @@ def place_meeple(orientation, location):
 
     if orientation == 'centre':
         if Tile.last_placed_tile.has_monastery:
-            Player.current_players[Player.turn].meeples_coords.append(location)
+            # [{ < позиция монастыря >: {'player': < игрок, занявший
+            # монастырь >, 'locations_left': [], }}, ]
+            tile_loc = Tile.last_placed_tile.placements[-1]['location']
+            locations = []
+
+            for x in range(3):
+                for y in range(3):
+                    if not (x == 1 and y == 1):
+                        locations.append((tile_loc[0] - 1 + x, tile_loc[1] - 1 + y))
+
+            Player.monasteries[(tile_loc[0], tile_loc[1])] = {'player' : Player.current_players[Player.turn], 'locations_left' : locations}
             Player.current_players[Player.turn].meeples_left -= 1
             Tile.pick_random_tile()
             Player.return_meeples()
@@ -376,7 +418,6 @@ def place_meeple(orientation, location):
                 if Tile.last_placed_tile.placements[-1]['connection_ids'][i] in Player.occupied_structures: return False
 
                 Tile.last_placed_tile.placements[-1]['connection_meeples'][i] = Player.current_players[Player.turn]
-                Player.current_players[Player.turn].meeples_coords.append(location)
                 Player.current_players[Player.turn].meeples_left -= 1
                 Tile.pick_random_tile()
                 Player.return_meeples()
@@ -386,9 +427,9 @@ def place_meeple(orientation, location):
 for i, c in enumerate(MEEPLE_COLORS):
     Player(c, f'Игрок{i}')
 
-Player.listed_players[0].name = 'Олежка пельмежка'
+Player.listed_players[0].name = 'Олег'
 
-'''Здесь описаны все возможные виды тайлов в оригинальной игре'''
+#Здесь описаны все возможные виды тайлов в оригинальной игре
 Tile(quantity=4,
     connections=[],
     has_monastery = True,

@@ -17,6 +17,12 @@ def draw_board(crop=2):
                         dest=[p['location'][0] * GRID_SCALE - VIEW_PORT_CENTRE[0] + crop,
                               p['location'][1] * GRID_SCALE - VIEW_PORT_CENTRE[1] + crop])
 
+            if t.has_monastery:
+                if p['location'] in Player.monasteries:
+                    loc = (p['location'][0] * GRID_SCALE - VIEW_PORT_CENTRE[0] + crop,
+                           p['location'][1] * GRID_SCALE - VIEW_PORT_CENTRE[1] + crop)
+                    SCREEN.blit(Player.monasteries[p['location']]['player'].sprite, (loc[0] + 20, loc[1]+20))
+
             for j, m in enumerate(p['connection_meeples']):
                 for i, c in enumerate(t.connections[j]['connections']):
                     if m != None and c:
@@ -36,9 +42,6 @@ def draw_board(crop=2):
 
                         break
 
-
-
-
 def draw_debug_info():
     '''
     Выводит информацию для разработчика
@@ -48,10 +51,10 @@ def draw_debug_info():
         for l in t.placements:
             for i, c in enumerate(t.connections):
 
-                text = SMALL_FONT.render(f"{l['enclosed_connections']}", True, [0,0,0])
-                x = l['location'][0] * GRID_SCALE - VIEW_PORT_CENTRE[0]
-                y = l['location'][1] * GRID_SCALE - VIEW_PORT_CENTRE[1]
-                SCREEN.blit(text, (x, y + 5))
+                # text = SMALL_FONT.render(f"{l['enclosed_connections']}", True, [0,0,0])
+                # x = l['location'][0] * GRID_SCALE - VIEW_PORT_CENTRE[0]
+                # y = l['location'][1] * GRID_SCALE - VIEW_PORT_CENTRE[1]
+                # SCREEN.blit(text, (x, y + 5))
 
                 if c['type'] == 'road':
                     color = [0, 0, 255]
