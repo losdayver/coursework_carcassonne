@@ -65,6 +65,8 @@ class Player:
 
     @staticmethod
     def return_meeples():
+        '''Данный метод возвращает все фишки подданных на завершенных объектах, а также на незавершенных при финальном подсчете очков'''
+
         structures_checked = []
 
         for t in Tile.tiles_pile:
@@ -122,7 +124,7 @@ class Tile:
     structure_score = {}
     '''В данной переменной хранится счет всех строений текущей партии'''
 
-    total_amount = 10
+    total_amount = 72
     '''Количество всех тайлов в игре'''
 
     tiles_pile = []
@@ -200,6 +202,8 @@ class Tile:
 
     @staticmethod
     def find_unfinished_structures():
+        '''Находит все незавершенные строения на доске и записывает их в Player.unfinished_structures'''
+
         Player.unfinished_structures.clear()
         for t in Tile.tiles_pile:
             for p in t.placements:
@@ -210,7 +214,6 @@ class Tile:
                         if not (c['connections'][i] == p['enclosed_connections'][i] or p['enclosed_connections'][i]):
                             if p['connection_ids'][c_i] not in Player.unfinished_structures:
                                 Player.unfinished_structures.append(p['connection_ids'][c_i])
-
 
     @staticmethod
     def place_tile(location, is_this_the_first_tile = True):
@@ -381,6 +384,8 @@ class Tile:
 
 def place_meeple(orientation):
     '''
+    Уставнавливает подданного на плитку
+
     :param orientation: строка, описывающая положение устанавливаемого мипла на тайле
     :returns True, если ход завершен, возвращает False, если мипла нельзя поставить
     '''
@@ -389,14 +394,15 @@ def place_meeple(orientation):
 
     flag = False
 
+    if Player.current_players[Player.turn].meeples_left < 1: return True
+
     #print(orientation)
     if orientation == None:
         flag = True
 
     elif orientation == 'centre':
         if Tile.last_placed_tile.has_monastery:
-            # [{ < позиция монастыря >: {'player': < игрок, занявший
-            # монастырь >, 'locations_left': [], }}, ]
+
             tile_loc = Tile.last_placed_tile.placements[-1]['location']
             locations = []
 
@@ -411,6 +417,7 @@ def place_meeple(orientation):
         else: return False
     else:
         for l in Tile.last_placed_tile.connections:
+            if flag: break
             for i, c in enumerate(Tile.last_placed_tile.connections):
                 index_rotated = Tile.last_placed_tile.placements[-1]['rotation']
                 if orientation == 'right': index_rotated += 1
@@ -423,8 +430,10 @@ def place_meeple(orientation):
                     if Tile.last_placed_tile.placements[-1]['connection_ids'][i] in Player.occupied_structures: return False
 
                     Tile.last_placed_tile.placements[-1]['connection_meeples'][i] = Player.current_players[Player.turn]
+
                     Player.current_players[Player.turn].meeples_left -= 1
                     flag = True
+                    break
 
     if flag:
         Player.return_meeples()

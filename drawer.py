@@ -112,21 +112,22 @@ def draw_gui():
         SCREEN.blit(text, [50, 120+i*40])
 
 def draw_tile_highlight(location):
-    '''Плдсвечивает выставляемую плитку'''
+    '''
+    Подсвечивает выставляемую плитку
+
+    :param location позиция подсвечиваемой плитки
+    '''
 
     highlight_sprite = pg.transform.rotate(Tile.selected_tile.sprite, Tile.selected_tile_rotation * 90)
     highlight_sprite.fill([0,40,100], special_flags=pg.BLEND_ADD)
     SCREEN.blit(highlight_sprite, location, special_flags=pg.BLEND_MULT)
 
-meeple_highlight_margin = 30
-def draw_meeple_highlight():
+def draw_meeple_highlight(meeple_highlight_margin = 30):
     '''
     Плдсвечивает выставляемого мипла
 
     :returns Строковое значение из 4 возможных ('up', 'down', 'left', 'right', 'centre') или None
     '''
-
-    global meeple_highlight_margin
 
     mouse_location = pg.mouse.get_pos()
 
@@ -195,8 +196,7 @@ def draw_meeple_highlight():
 
     return meeple_orientation
 
-highlight_last_tile_margin = 1
-def highlight_last_tile(turn):
+def highlight_last_tile(turn, highlight_last_tile_margin = 1):
     '''
     Подсвечивает последний поставленный тайл
 

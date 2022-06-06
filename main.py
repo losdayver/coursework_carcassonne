@@ -54,8 +54,9 @@ while 1:
     elif game_board.current_game_mode == 'meeple_placing':
 
         # Установка миплов
-        if mouse_pressed[0] and CAN_PLACE_MEEPLE:
-            if game_board.place_meeple(MEEPLE_ORIENTATION):
+
+        if (mouse_pressed[0] and CAN_PLACE_MEEPLE) or Player.current_players[Player.turn].meeples_left < 1:
+            if game_board.place_meeple(MEEPLE_ORIENTATION) or Player.current_players[Player.turn].meeples_left < 1:
                 CAN_PLACE_MEEPLE = False
                 Tile.pick_random_tile()
 
