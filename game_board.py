@@ -1,7 +1,7 @@
 from settings import *
 import random
 
-game_modes = { 'tile_placing', 'meeple_placing' }
+game_modes = { 'tile_placing', 'meeple_placing', 'game_end' }
 '''Здесь расписаны все возможные режимы игры (фазы)'''
 
 current_game_mode = 'tile_placing'
@@ -17,10 +17,10 @@ class Player:
     '''Номер игрока, который в данный момент ходит'''
 
     listed_players = []
-    '''Список игроков данной партии'''
+    '''Список всех игроков в памяти приложения'''
 
     current_players = []
-    '''Список всех игроков в памяти приложения'''
+    '''Список игроков данной партии'''
 
     occupied_structures = {}
     '''
@@ -48,7 +48,6 @@ class Player:
         self.name = name
         self.score = 0
         self.meeples_left = 7
-        #self.meeples_coords = []
         '''Список координат всех поставленных игроком миплов (необходимо для отрисовки)'''
 
         Player.listed_players.append(self)
@@ -70,13 +69,22 @@ class Player:
 
         for t in Tile.tiles_pile:
             for p in t.placements:
+                for monastery_position in Player.monasteries:
+                    if p['location'] in Player.monasteries[monastery_position]['locations_left']:
+                        Player.monasteries[monastery_position]['locations_left'].remove(p['location'])
+
+
                 if t.has_monastery and p['location'] in Player.monasteries:
                     if not any(Player.monasteries[p['location']]['locations_left']):
                         Player.monasteries[p['location']]['player'].score += 9
                         del Player.monasteries[p['location']]
+                    elif current_game_mode == 'game_end':
+                        Player.monasteries[p['location']]['player'].score += 9 - len(Player.monasteries[p['location']]['locations_left'])
+                        del Player.monasteries[p['location']]
 
                 for i, m in enumerate(p['connection_ids']):
-                    if m not in Player.unfinished_structures and m in Player.occupied_structures:
+                    if (m not in Player.unfinished_structures and m in Player.occupied_structures) or \
+                            (current_game_mode == 'game_end' and m in Player.occupied_structures):
 
                         if m not in structures_checked:
                             structures_checked.append(m)
@@ -90,7 +98,9 @@ class Player:
 
                             for player in Player.occupied_structures[m]:
                                 if Player.occupied_structures[m][player] == max_count:
-                                    player.score += Tile.structure_score[m]
+                                    if current_game_mode == 'game_end' and t.connections[i]['type'] == 'town':
+                                        player.score += Tile.structure_score[m]//2
+                                    else: player.score += Tile.structure_score[m]
 
                         if p['connection_meeples'][i] != None:
                             p['connection_meeples'][i].meeples_left += 1
@@ -112,7 +122,7 @@ class Tile:
     structure_score = {}
     '''В данной переменной хранится счет всех строений текущей партии'''
 
-    total_amount = 72
+    total_amount = 10
     '''Количество всех тайлов в игре'''
 
     tiles_pile = []
@@ -289,10 +299,6 @@ class Tile:
                     else:
                         Tile.structure_score[p['connection_ids'][i]] = how_many_points
 
-                for monastery_position in Player.monasteries:
-                    if p['location'] in Player.monasteries[monastery_position]['locations_left']:
-                        Player.monasteries[monastery_position]['locations_left'].remove(p['location'])
-
         Tile.last_placed_tile = Tile.selected_tile
 
         Tile.find_unfinished_structures()
@@ -373,20 +379,21 @@ class Tile:
 
 '''------------------------------------------------ГЛОБАЛЬНЫЕ ФУНКЦИИ---------------------------------------------'''
 
-def place_meeple(orientation, location):
+def place_meeple(orientation):
     '''
-    Возвращает True, если ход завершен, возвращает False, если мипла нельзя поставить
-
     :param orientation: строка, описывающая положение устанавливаемого мипла на тайле
+    :returns True, если ход завершен, возвращает False, если мипла нельзя поставить
     '''
+
+    global current_game_mode
+
+    flag = False
 
     #print(orientation)
     if orientation == None:
-        Tile.pick_random_tile()
-        Player.return_meeples()
-        return True
+        flag = True
 
-    if orientation == 'centre':
+    elif orientation == 'centre':
         if Tile.last_placed_tile.has_monastery:
             # [{ < позиция монастыря >: {'player': < игрок, занявший
             # монастырь >, 'locations_left': [], }}, ]
@@ -400,28 +407,33 @@ def place_meeple(orientation, location):
 
             Player.monasteries[(tile_loc[0], tile_loc[1])] = {'player' : Player.current_players[Player.turn], 'locations_left' : locations}
             Player.current_players[Player.turn].meeples_left -= 1
-            Tile.pick_random_tile()
-            Player.return_meeples()
-            return True
+            flag = True
         else: return False
+    else:
+        for l in Tile.last_placed_tile.connections:
+            for i, c in enumerate(Tile.last_placed_tile.connections):
+                index_rotated = Tile.last_placed_tile.placements[-1]['rotation']
+                if orientation == 'right': index_rotated += 1
+                elif orientation == 'down': index_rotated += 2
+                elif orientation == 'left': index_rotated += 3
+                index_rotated %= 4
 
-    for l in Tile.last_placed_tile.connections:
-        for i, c in enumerate(Tile.last_placed_tile.connections):
-            index_rotated = Tile.last_placed_tile.placements[-1]['rotation']
-            if orientation == 'right': index_rotated += 1
-            elif orientation == 'down': index_rotated += 2
-            elif orientation == 'left': index_rotated += 3
-            index_rotated %= 4
+                if c['connections'][index_rotated]:
 
-            if c['connections'][index_rotated]:
+                    if Tile.last_placed_tile.placements[-1]['connection_ids'][i] in Player.occupied_structures: return False
 
-                if Tile.last_placed_tile.placements[-1]['connection_ids'][i] in Player.occupied_structures: return False
+                    Tile.last_placed_tile.placements[-1]['connection_meeples'][i] = Player.current_players[Player.turn]
+                    Player.current_players[Player.turn].meeples_left -= 1
+                    flag = True
 
-                Tile.last_placed_tile.placements[-1]['connection_meeples'][i] = Player.current_players[Player.turn]
-                Player.current_players[Player.turn].meeples_left -= 1
-                Tile.pick_random_tile()
-                Player.return_meeples()
-                return True
+    if flag:
+        Player.return_meeples()
+
+        if Tile.total_amount < 1:
+            current_game_mode = 'game_end'
+
+        return True
+
     return False
 
 for i, c in enumerate(MEEPLE_COLORS):

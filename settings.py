@@ -25,7 +25,7 @@ MEEPLE_COLORS = [(200,0,0),
 '''Список всех возможных цветов игроков'''
 
 # Sprites
-MEEPLE_SPRITE = pg.image.load('./resources/meeple.png')
+MEEPLE_SPRITE = pg.image.load('./resources/meeple2.png')
 '''Картинка подданного'''
 
 HAND_SIGN_SPRITE = pg.image.load('./resources/hand_sign.png')

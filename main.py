@@ -3,7 +3,6 @@ if __name__ != '__main__': quit()
 import random
 from settings import *
 import game_board
-from game_board import current_game_mode
 from drawer import *
 
 # Переменные для регистрации нажатий и тд
@@ -13,15 +12,15 @@ CAN_PRESS_MOUSE = True
 CAN_PRESS_ROTATE = True
 CAN_PRESS_DEBUG = True
 CAN_PLACE_MEEPLE = False
-PLACING_MEEPLE_DATA = None
+MEEPLE_ORIENTATION = None
 
 clock = pg.time.Clock()
 
-game_board.Player.participate_all()
+game_board.Player.listed_players[0].participate()
+game_board.Player.listed_players[1].participate()
 
 game_board.selected_tile = game_board.Tile.tiles_pile[-1]
 game_board.Tile.place_tile((7, 5), False)
-game_board.Player.turn = 0
 Tile.pick_random_tile()
 
 while 1:
@@ -32,7 +31,7 @@ while 1:
     keys_pressed = pg.key.get_pressed()
     mouse_pressed = pg.mouse.get_pressed(3)
 
-    if current_game_mode == 'tile_placing':
+    if game_board.current_game_mode == 'tile_placing':
 
         # Вращаение тайлов
         if keys_pressed[pg.K_r] and CAN_PRESS_ROTATE:
@@ -48,22 +47,24 @@ while 1:
             if game_board.Tile.place_tile(
                 location=((pg.mouse.get_pos()[0] + VIEW_PORT_CENTRE[0]) // GRID_SCALE,
                           (pg.mouse.get_pos()[1] + VIEW_PORT_CENTRE[1]) // GRID_SCALE), ):
-                current_game_mode = 'meeple_placing'
+                game_board.current_game_mode = 'meeple_placing'
         elif not mouse_pressed[0]:
             CAN_PRESS_MOUSE = True
 
-    elif current_game_mode == 'meeple_placing':
+    elif game_board.current_game_mode == 'meeple_placing':
 
         # Установка миплов
         if mouse_pressed[0] and CAN_PLACE_MEEPLE:
-            if PLACING_MEEPLE_DATA != None:
-                if game_board.place_meeple(PLACING_MEEPLE_DATA[1], PLACING_MEEPLE_DATA[0]):
-                    CAN_PLACE_MEEPLE = False
-                    current_game_mode = 'tile_placing'
+            if game_board.place_meeple(MEEPLE_ORIENTATION):
+                CAN_PLACE_MEEPLE = False
+                Tile.pick_random_tile()
+
+                if game_board.current_game_mode != 'game_end':
+                    game_board.current_game_mode = 'tile_placing'
                     Player.turn += 1
                     Player.turn %= len(Player.current_players)
-
-                    #Tile.calculate_score()
+                else:
+                    Player.return_meeples()
 
         elif not mouse_pressed[0]:
             CAN_PLACE_MEEPLE = True
@@ -90,20 +91,20 @@ while 1:
     SCREEN.fill([255, 255, 255])
 
     # Отрисовка подсветки текущего / прошлого тайла
-    if current_game_mode == 'tile_placing' and Tile.total_amount < 71:
+    if game_board.current_game_mode == 'tile_placing' and Tile.total_amount < 71:
         highlight_last_tile(abs((Player.turn-1)%len(Player.current_players)))
     elif Tile.total_amount < 71: highlight_last_tile(Player.turn)
 
     draw_board()
 
     # Отрисовка "призрака тайла"
-    if current_game_mode == 'tile_placing':
+    if game_board.current_game_mode == 'tile_placing':
         draw_tile_highlight(location=((pg.mouse.get_pos()[0] + VIEW_PORT_CENTRE[0]) // GRID_SCALE * GRID_SCALE - VIEW_PORT_CENTRE[0],
                                   ((pg.mouse.get_pos()[1] + VIEW_PORT_CENTRE[1]) // GRID_SCALE * GRID_SCALE - VIEW_PORT_CENTRE[1])))
     # Отрисовка "призрака мипла"
-    elif current_game_mode == 'meeple_placing':
+    elif game_board.current_game_mode == 'meeple_placing':
 
-        PLACING_MEEPLE_DATA = draw_meeple_highlight()
+        MEEPLE_ORIENTATION = draw_meeple_highlight()
 
     #draw_all_meeples()
 

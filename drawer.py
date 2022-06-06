@@ -32,13 +32,13 @@ def draw_board(crop=2):
                                     p['location'][1] * GRID_SCALE - VIEW_PORT_CENTRE[1] + crop)
 
                         if rot_index == 0:
-                            SCREEN.blit(m.sprite, (loc[0] + 20, loc[1]))
+                            SCREEN.blit(m.sprite, (loc[0] + GRID_SCALE/2 - MEEPLE_SPRITE.get_width() / 2, loc[1]))
                         elif rot_index == 1:
-                            SCREEN.blit(m.sprite, (loc[0] + GRID_SCALE - MEEPLE_SPRITE.get_height(), loc[1] + 20))
+                            SCREEN.blit(m.sprite, (loc[0] + GRID_SCALE - MEEPLE_SPRITE.get_height(), loc[1] + GRID_SCALE/2 - MEEPLE_SPRITE.get_height() / 2))
                         elif rot_index == 2:
-                            SCREEN.blit(m.sprite, (loc[0] + 20, loc[1] + GRID_SCALE - MEEPLE_SPRITE.get_height()))
+                            SCREEN.blit(m.sprite, (loc[0] + GRID_SCALE/2 - MEEPLE_SPRITE.get_width() / 2, loc[1] + GRID_SCALE - MEEPLE_SPRITE.get_height()))
                         elif rot_index == 3:
-                            SCREEN.blit(m.sprite, (loc[0], loc[1] + 20))
+                            SCREEN.blit(m.sprite, (loc[0], loc[1] + GRID_SCALE/2 - MEEPLE_SPRITE.get_height() / 2))
 
                         break
 
@@ -50,11 +50,6 @@ def draw_debug_info():
     for t in Tile.tiles_pile:
         for l in t.placements:
             for i, c in enumerate(t.connections):
-
-                # text = SMALL_FONT.render(f"{l['enclosed_connections']}", True, [0,0,0])
-                # x = l['location'][0] * GRID_SCALE - VIEW_PORT_CENTRE[0]
-                # y = l['location'][1] * GRID_SCALE - VIEW_PORT_CENTRE[1]
-                # SCREEN.blit(text, (x, y + 5))
 
                 if c['type'] == 'road':
                     color = [0, 0, 255]
@@ -101,6 +96,8 @@ def draw_debug_info():
         SCREEN.blit(text, (pg.display.get_window_size()[0] - text.get_width(), i * 20))
 
 def draw_gui():
+    '''Выводит на экран пользовательский интерфейс'''
+
     SCREEN.blit(pg.transform.scale(Tile.selected_tile.sprite, [60, 60]), [20, 20])
 
     text = REGULAR_FONT.render(f'Плиток осталось: {Tile.total_amount}', True, [0, 0, 0])
@@ -111,77 +108,105 @@ def draw_gui():
         SCREEN.blit(p.sprite, [10, 100+i*40])
         text = REGULAR_FONT.render(f'{p.name} Счет: {p.score} Осталось миплов: {p.meeples_left}', True, [0,0,0])
         if Player.turn == i:
-            SCREEN.blit(HAND_SIGN_SPRITE, [text.get_width() + 60, 120 + i * 40])
+            SCREEN.blit(HAND_SIGN_SPRITE, [text.get_width() + 60, 123 + i * 40])
         SCREEN.blit(text, [50, 120+i*40])
 
 def draw_tile_highlight(location):
+    '''Плдсвечивает выставляемую плитку'''
+
     highlight_sprite = pg.transform.rotate(Tile.selected_tile.sprite, Tile.selected_tile_rotation * 90)
     highlight_sprite.fill([0,40,100], special_flags=pg.BLEND_ADD)
     SCREEN.blit(highlight_sprite, location, special_flags=pg.BLEND_MULT)
 
-meeple_highlight_location = [0, 0]
-meeple_highlight_margin = 20
-# Возвращает результирующую ориентацию поставновки мипла
+meeple_highlight_margin = 30
 def draw_meeple_highlight():
-    global meeple_highlight_location
+    '''
+    Плдсвечивает выставляемого мипла
+
+    :returns Строковое значение из 4 возможных ('up', 'down', 'left', 'right', 'centre') или None
+    '''
+
     global meeple_highlight_margin
 
     mouse_location = pg.mouse.get_pos()
 
-    meeple_orientation = None
+    tile_loc = [0, 0]
+    tile_loc[0] = Tile.last_placed_tile.placements[-1]['location'][0] * GRID_SCALE
+    tile_loc[1] = Tile.last_placed_tile.placements[-1]['location'][1] * GRID_SCALE
 
-    last_tile_location = [0, 0]
-    last_tile_location[0] = Tile.last_placed_tile.placements[-1]['location'][0] * GRID_SCALE
-    last_tile_location[1] = Tile.last_placed_tile.placements[-1]['location'][1] * GRID_SCALE
+    meeple_highlight_location = [0, 0]
+
+    meeple_orientation = None
 
     offset = [GRID_SCALE // 2 - MEEPLE_SPRITE.get_width() // 2, GRID_SCALE // 2 - MEEPLE_SPRITE.get_height() // 2]
 
-    if last_tile_location[0] < pg.mouse.get_pos()[0] + VIEW_PORT_CENTRE[0] < last_tile_location[0] + GRID_SCALE and \
-        last_tile_location[1] < pg.mouse.get_pos()[1] + VIEW_PORT_CENTRE[1] < last_tile_location[1] + GRID_SCALE:
+    if tile_loc[0] < pg.mouse.get_pos()[0] + VIEW_PORT_CENTRE[0] < tile_loc[0] + GRID_SCALE and \
+        tile_loc[1] < pg.mouse.get_pos()[1] + VIEW_PORT_CENTRE[1] < tile_loc[1] + GRID_SCALE:
 
-            if last_tile_location[0] + meeple_highlight_margin < pg.mouse.get_pos()[0] + VIEW_PORT_CENTRE[0] < last_tile_location[0] + GRID_SCALE - meeple_highlight_margin:
-                if pg.mouse.get_pos()[1] + VIEW_PORT_CENTRE[1] < last_tile_location[1] + meeple_highlight_margin:
-                    offset = [GRID_SCALE // 2 - MEEPLE_SPRITE.get_width() // 2, 0]
+            rot = Tile.last_placed_tile.placements[-1]['rotation']
+
+            if tile_loc[0] + meeple_highlight_margin < pg.mouse.get_pos()[0] + VIEW_PORT_CENTRE[0] < tile_loc[0] + GRID_SCALE - meeple_highlight_margin:
+                if pg.mouse.get_pos()[1] + VIEW_PORT_CENTRE[1] < tile_loc[1] + meeple_highlight_margin and \
+                        Tile.last_placed_tile.simlified_connections[(0 + rot) % 4] != 'field':
                     meeple_orientation = 'up'
-                elif last_tile_location[1] + GRID_SCALE - meeple_highlight_margin < pg.mouse.get_pos()[1] + VIEW_PORT_CENTRE[1]:
-                    offset = [GRID_SCALE // 2 - MEEPLE_SPRITE.get_width() // 2, GRID_SCALE - MEEPLE_SPRITE.get_height()]
+                elif tile_loc[1] + GRID_SCALE - meeple_highlight_margin < pg.mouse.get_pos()[1] + VIEW_PORT_CENTRE[1] and \
+                        Tile.last_placed_tile.simlified_connections[(2 + rot) % 4] != 'field':
                     meeple_orientation = 'down'
                 else: meeple_orientation = 'centre'
 
-                meeple_highlight_location = [last_tile_location[0] + offset[0] - VIEW_PORT_CENTRE[0],
-                                             last_tile_location[1] + offset[1] - VIEW_PORT_CENTRE[1]]
-
-            elif last_tile_location[1] + meeple_highlight_margin < pg.mouse.get_pos()[1] + VIEW_PORT_CENTRE[1] < last_tile_location[1] + GRID_SCALE - meeple_highlight_margin:
-                if pg.mouse.get_pos()[0] + VIEW_PORT_CENTRE[0] < last_tile_location[0] + meeple_highlight_margin:
-                    offset = [0, GRID_SCALE // 2 - MEEPLE_SPRITE.get_height() // 2]
+            elif tile_loc[1] + meeple_highlight_margin < pg.mouse.get_pos()[1] + VIEW_PORT_CENTRE[1] < tile_loc[1] + GRID_SCALE - meeple_highlight_margin:
+                if pg.mouse.get_pos()[0] + VIEW_PORT_CENTRE[0] < tile_loc[0] + meeple_highlight_margin and \
+                        Tile.last_placed_tile.simlified_connections[(3 + rot) % 4] != 'field':
                     meeple_orientation = 'left'
-                elif last_tile_location[0] + GRID_SCALE - meeple_highlight_margin < pg.mouse.get_pos()[0] + VIEW_PORT_CENTRE[0]:
-                    offset = [GRID_SCALE - MEEPLE_SPRITE.get_height(), GRID_SCALE // 2 - MEEPLE_SPRITE.get_height() // 2]
+                elif tile_loc[0] + GRID_SCALE - meeple_highlight_margin < pg.mouse.get_pos()[0] + VIEW_PORT_CENTRE[0] and \
+                        Tile.last_placed_tile.simlified_connections[(1 + rot) % 4] != 'field':
                     meeple_orientation = 'right'
                 else:
                     meeple_orientation = 'centre'
+            else: meeple_orientation = 'centre'
 
-                meeple_highlight_location = [last_tile_location[0] + offset[0] - VIEW_PORT_CENTRE[0],
-                                             last_tile_location[1] + offset[1] - VIEW_PORT_CENTRE[1]]
+    else: meeple_orientation = None
 
-            SCREEN.blit(Player.current_players[Player.turn].sprite, meeple_highlight_location)
+    player = Player.current_players[Player.turn]
 
-            meeple_highlight_location[0] += VIEW_PORT_CENTRE[0]
-            meeple_highlight_location[1] += VIEW_PORT_CENTRE[1]
+    if meeple_orientation != None:
+        dest = []
 
-    return (meeple_highlight_location, meeple_orientation)
+        if meeple_orientation == 'up':
+            dest = [tile_loc[0] + GRID_SCALE / 2 - MEEPLE_SPRITE.get_width() / 2, \
+                   tile_loc[1]]
+        elif meeple_orientation == 'right':
+            dest = [tile_loc[0] + GRID_SCALE - MEEPLE_SPRITE.get_height(), \
+                   tile_loc[1] + GRID_SCALE / 2 - MEEPLE_SPRITE.get_height() / 2]
+        elif meeple_orientation == 'down':
+            dest = [tile_loc[0] + GRID_SCALE / 2 - MEEPLE_SPRITE.get_width() / 2, \
+                   tile_loc[1] + GRID_SCALE - MEEPLE_SPRITE.get_height()]
+        elif meeple_orientation == 'left':
+            dest = [tile_loc[0], \
+                   tile_loc[1] + GRID_SCALE / 2 - MEEPLE_SPRITE.get_height() / 2]
+        elif meeple_orientation == 'centre':
+            dest = [tile_loc[0] + GRID_SCALE / 2 - MEEPLE_SPRITE.get_width() / 2, \
+                   tile_loc[1] + GRID_SCALE / 2 - MEEPLE_SPRITE.get_height() / 2]
+
+        dest[0] -= VIEW_PORT_CENTRE[0]
+        dest[1] -= VIEW_PORT_CENTRE[1]
+
+        SCREEN.blit(player.sprite, dest)
+
+    return meeple_orientation
 
 highlight_last_tile_margin = 1
 def highlight_last_tile(turn):
+    '''
+    Подсвечивает последний поставленный тайл
+
+    :param Номер хода, на котором необходимо подсветить плитку
+    '''
+
     SCREEN.fill(Player.current_players[turn].color,
                 [Tile.last_placed_tile.placements[-1]['location'][0] * GRID_SCALE - VIEW_PORT_CENTRE[0] - highlight_last_tile_margin,
                  Tile.last_placed_tile.placements[-1]['location'][1] * GRID_SCALE - VIEW_PORT_CENTRE[1] - highlight_last_tile_margin,
                  GRID_SCALE + highlight_last_tile_margin*2, GRID_SCALE + highlight_last_tile_margin*2])
-
-def draw_all_meeples():
-    for plr in Player.current_players:
-        for coords in plr.meeples_coords:
-            SCREEN.blit(plr.sprite, (coords[0] - VIEW_PORT_CENTRE[0], coords[1] - VIEW_PORT_CENTRE[1]))
 
 
 
